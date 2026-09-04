@@ -1,0 +1,8 @@
+.states
+.venv/
+*.partial.pkl
+assets/external/
+*.py[cod]
+.web
+*.db
+__pycache__/
