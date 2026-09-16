@@ -6,3 +6,10 @@ assets/external/
 .web
 *.db
 __pycache__/
+NVDA-options-response.json
+NVDA-options-request.json
+data/options-cache/
+nvda_backtest_output.json
+nvda_mid_vs_trade.png
+nvda_mid_vs_trade_stats.json
+nvda_mid_vs_trade_web.json

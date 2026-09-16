@@ -14,17 +14,17 @@
       <a href="data.html">Data</a>
       <a href="assignment.html">Assignment</a>
     </nav>
-    <a class="src" href="https://github.com/JakeVestal/535_fintech" target="_blank" rel="noopener">GitHub</a>
+    <a class="src" href="https://github.com/Jessie-BP/fintech-535" target="_blank" rel="noopener">GitHub</a>
   </div>
   <main>
     <header class="hero">
       <div>
-        <p class="kicker">Illustrative sample · not a live LSEG pull</p>
-        <h1>Covered-call blotter</h1>
+        <p class="kicker">Historical LSEG tape · 1 Jun–4 Sep 2026</p>
+        <h1>NVDA covered-call backtest</h1>
         <p class="lede">
-          AAPL Friday weeklies, wait through expiry. Monday combo at mid;
-          OTM expire; ITM assigned (stock vs short call → flat). Replace
-          <span class="mono">book.js</span> with your tape. Numbers here are made up to show the shape.
+          Monday 10:00 ET entries in NVDA Friday weeklies. Stock at the hourly
+          opening print; nearest listed OTM call at mid. Wait through expiry:
+          OTM/ATM expire, ITM assigned against the covered shares.
         </p>
       </div>
       <div class="badge" id="badge">SAMPLE</div>
@@ -36,7 +36,7 @@
       <div class="pane-head">
         <div>
           <p class="kicker">NAV</p>
-          <h2>Growth of the sample book</h2>
+          <h2>Growth of the NVDA book</h2>
         </div>
         <p class="meta" id="chart-meta">NAV · initial · maintenance · hover a date</p>
       </div>
@@ -51,8 +51,8 @@
     <section class="pane" id="scatter-pane">
       <div class="pane-head">
         <div>
-          <p class="kicker">Midpoint assumption</p>
-          <h2>TRDPRC_1 vs (BID+ASK)/2</h2>
+          <p class="kicker">NVDA tape · real LSEG hourly observations</p>
+          <h2>NVDA TRDPRC_1 vs (BID+ASK)/2</h2>
         </div>
         <p class="meta" id="scatter-meta">Near-the-money calls · Y = last, X = mid</p>
       </div>
@@ -105,7 +105,7 @@
       <div class="pane-head">
         <div>
           <p class="kicker">RICs</p>
-          <h2>Expired contracts this book queried</h2>
+          <h2>Representative expired contract RICs</h2>
         </div>
       </div>
       <div class="scroll">

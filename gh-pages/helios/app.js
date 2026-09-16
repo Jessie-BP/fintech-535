@@ -15,17 +15,17 @@
 
   const last = B.ledger[B.ledger.length - 1];
   const badge = document.getElementById("badge");
-  if (badge) badge.textContent = "SAMPLE · " + B.underlying + " · start " + money(B.startCash, 0);
+  if (badge) badge.textContent = "BACKTEST · " + B.underlying + " · start " + money(B.startCash, 0);
 
   const cards = [
-    ["Cash", money(last.cash), "Settled dollars after fills"],
-    ["Stock LMV", money(last.lmv), last.shares + " " + B.underlying + " @ " + last.stockPx.toFixed(2)],
-    ["Short option", money(last.optMv), last.callLabel, last.optMv < 0],
-    ["NAV / equity", money(last.nav), "cash + LMV + option MV", false, true],
-    ["Initial margin", money(last.init), "Reg T " + Math.round(B.initPct * 100) + "% of LMV · covered call adds $0"],
-    ["Maintenance", money(last.maint), "FINRA " + Math.round(B.maintPct * 100) + "% of LMV"],
-    ["Available funds", money(last.available), "NAV − initial. Room for a new risk."],
-    ["Excess equity", money(last.excess), "NAV − maintenance. Margin-call line."],
+    ["Ending cash", money(last.cash), "Settled dollars after final blotter event"],
+    ["Ending stock LMV", money(last.lmv), last.shares + " " + B.underlying + " @ " + last.stockPx.toFixed(2)],
+    ["Ending short option", money(last.optMv), last.callLabel, last.optMv < 0],
+    ["Ending NAV / equity", money(last.nav), "cash + LMV + option MV", false, true],
+    ["Ending initial margin", money(last.init), "Reg T " + Math.round(B.initPct * 100) + "% of LMV · covered call adds $0"],
+    ["Ending maintenance", money(last.maint), "FINRA " + Math.round(B.maintPct * 100) + "% of LMV"],
+    ["Ending available funds", money(last.available), "NAV − initial. Room for a new risk."],
+    ["Ending excess equity", money(last.excess), "NAV − maintenance. Margin-call line."],
   ];
   document.getElementById("accounts").innerHTML = cards
     .map(([k, v, h, down, acc]) => {
@@ -90,6 +90,7 @@
         <div><h3>Exit</h3><p>${w.roll || ""}</p></div>
         <div><h3>Assignment</h3><p>${w.pin || ""}</p></div>
         <div><h3>Reg T</h3><p>${w.regT || ""}</p></div>
+        <div><h3>Analysis</h3><p>${w.analysis || ""}</p></div>
       </div>`;
   }
 
@@ -217,10 +218,15 @@
       <text x="${W - padR}" y="${H - 10}" text-anchor="end" fill="#5e7673" font-size="10" font-family="IBM Plex Mono,monospace">TRDPRC_1</text>
     </svg>`;
     if (meta) {
+      const fittedN = Number(pack.n || pts.length);
+      const displayNote = fittedN !== pts.length
+        ? " · " + pts.length + " plotted"
+        : "";
       meta.textContent =
         "R² = " + Number(pack.r2).toFixed(3) +
         " · slope " + Number(slope).toFixed(3) +
-        " · n = " + pts.length +
+        " · n = " + fittedN.toLocaleString() +
+        displayNote +
         "  (dashed = y=x)";
     }
   }
