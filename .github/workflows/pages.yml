@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - gh-pages/**
+      - docs/index.html
       - option_pipeline_data.pkl
       - export_gh_pages.py
       - .github/workflows/pages.yml
@@ -24,6 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - name: Add the Options Surface Lab page
+        run: |
+          mkdir -p gh-pages/helios/options-surface
+          cp docs/index.html gh-pages/helios/options-surface/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: gh-pages/helios
