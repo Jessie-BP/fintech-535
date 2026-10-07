@@ -14,16 +14,18 @@
       <a href="options-surface/">Options Surface</a>
       <a href="data.html">Data</a>
       <a href="assignment.html">Assignment</a>
+      <a href="pmcc/">PMCC</a>
     </nav>
     <a class="src" href="https://github.com/Jessie-BP/fintech-535" target="_blank" rel="noopener">GitHub</a>
   </div>
   <main>
     <header class="hero">
       <div>
-        <p class="kicker">Historical LSEG tape · 1 Jun–4 Sep 2026</p>
+        <p class="kicker">Historical LSEG tape · 1 Jun–11 Sep 2026</p>
         <h1>NVDA covered-call backtest</h1>
         <p class="lede">
-          Monday 10:00 ET entries in NVDA Friday weeklies. Stock at the hourly
+          First trading day of each week at 10:00 ET in NVDA weeklies; Monday
+          holidays roll entry to the next open session. Stock at the hourly
           opening print; nearest listed OTM call at mid. Wait through expiry:
           OTM/ATM expire, ITM assigned against the covered shares.
         </p>
@@ -63,10 +65,28 @@
     <section class="pane">
       <div class="pane-head">
         <div>
-          <p class="kicker">Blotter</p>
-          <h2>Trades you actually made</h2>
+          <p class="kicker">Weekly decisions</p>
+          <h2>One row per eligible entry week</h2>
         </div>
-        <p class="lede" style="margin:0;max-width:24rem">Time, RIC, side, qty, limit, fill, cash Δ, rule. EXPIRE or ASSIGN on Friday — no BTC.</p>
+        <p class="lede" style="margin:0;max-width:28rem">TRADE means a verified two-sided fill. DATA GAP means the historical contract pull is incomplete—not that NVDA lacked an ATM call. NO QUOTE is a genuine rule-based skip.</p>
+      </div>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr><th>Entry</th><th>Expiry session</th><th>Spot</th><th>Status</th><th>Call / reason</th><th>Outcome</th></tr>
+          </thead>
+          <tbody id="weekly-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="pane">
+      <div class="pane-head">
+        <div>
+          <p class="kicker">Blotter</p>
+          <h2>Executed trade blotter</h2>
+        </div>
+        <p class="lede" style="margin:0;max-width:24rem">Time, RIC, side, qty, limit, fill, cash Δ, rule. EXPIRE or ASSIGN on the expiry session — no BTC.</p>
       </div>
       <div class="scroll">
         <table>
@@ -86,13 +106,13 @@
           <p class="kicker">Ledger</p>
           <h2>Position, cash, and margin over time</h2>
         </div>
-        <p class="lede" style="margin:0;max-width:24rem">Marks at week-ends. Short calls are negative MV. Covered-call initial is 50% of stock LMV.</p>
+        <p class="lede" style="margin:0;max-width:28rem">Event-time snapshots: ENTRY holds the short call; EXPIRE/ASSIGN rows show the position immediately after settlement, so a flat call on those rows is expected.</p>
       </div>
       <div class="scroll">
         <table>
           <thead>
             <tr>
-              <th>Date</th><th>Cash</th><th>Shares</th><th>Short call</th><th>Spot</th>
+              <th>Date</th><th>Event</th><th>Cash</th><th>Shares</th><th>Short call</th><th>Spot</th>
               <th>LMV</th><th>Opt MV</th><th>NAV</th><th>Initial</th><th>Maint</th><th>Available</th>
             </tr>
           </thead>

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>AAPL PMCC backtest</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <style>tr[data-combo]{cursor:pointer}tr[data-combo]:hover,tr[data-combo].selected{background:#14251f}tr.best td{color:var(--accent)}.best-tag{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;background:var(--accent);color:#07140f;border-radius:4px;padding:1px 5px;margin-left:4px}.picker{color:var(--muted);font-size:12px}.picker select{margin-left:8px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:5px;padding:7px}.footnote{color:var(--muted);font-size:12px;margin:12px 0 0}.pmcc-nav{display:flex;gap:14px;margin-bottom:10px}.pmcc-nav a{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.06em;color:var(--muted)}.pmcc-nav a:hover{color:var(--accent)}</style>
+</head>
+<body>
+  <main>
+    <nav class="pmcc-nav"><a href="../">Blotter</a><a href="../data.html">Data</a><a href="../assignment.html">Assignment</a></nav>
+    <header>
+      <p class="eyebrow">LSEG · POINT-IN-TIME OPTIONS BACKTEST</p>
+      <h1>AAPL Poor Man’s Covered Call</h1>
+      <p class="lead">Fifteen PMCC specifications: five long-call Delta targets crossed with three weekly short-call targets. Every selection uses the prior session’s daily Greeks, then executes at the next session’s 10:00 ET bid/ask.</p>
+    </header>
+
+    <div id="pending" class="notice" hidden>Waiting for the verified LSEG pull. No synthetic trades are displayed.</div>
+    <section id="metrics" class="metrics"></section>
+
+    <section class="panel data-panel">
+      <div class="head"><div><p class="eyebrow">PARAMETER COMPARISON</p><h2>5 long targets × 3 short targets</h2></div><label class="picker">Detailed ledger <select id="combo"></select></label></div>
+      <div class="scroll"><table><thead><tr><th>Combination</th><th>Actual long Δ</th><th>Return</th><th>P&amp;L / long debit</th><th>Ending NAV</th><th>Event max DD</th><th>Trade weeks</th><th>Data gaps</th><th>AAPL B&amp;H</th></tr></thead><tbody id="comparison"></tbody></table></div>
+      <p class="footnote">This is a sensitivity comparison, not an in-sample instruction to select the best-performing row.</p>
+    </section>
+
+    <section class="panel">
+      <div class="head"><div><p class="eyebrow">RULES</p><h2>Executable specification</h2></div></div>
+      <div class="rules">
+        <div><b>Long</b><span>From actual AAPL calls 270–450 DTE, test previous-close Delta targets 0.70, 0.75, 0.80, 0.85 and 0.90 (±0.03). Fill at the 10:00 ET ask.</span></div>
+        <div><b>Short</b><span>Test weekly-call Delta targets 0.20, 0.25 and 0.30, selecting the nearest prior-close Delta subject to a ±0.10 guardrail. A next-morning price gap does not retroactively remove a valid prior-close candidate. Fill at bid.</span></div>
+        <div><b>Calendar</b><span>Trade on the first exchange session of the week. A Monday holiday moves entry to the next open session.</span></div>
+        <div><b>Exit</b><span>Buy back the short at its expiry-session 15:00 ET ask; close the long at the final 15:00 ET bid.</span></div>
+        <div><b>Costs</b><span>$0.65 per contract per side. Open positions use liquidation value: long bid minus short ask.</span></div>
+        <div><b>No look-ahead</b><span>The Delta used to choose a contract is dated and shown for the session before execution.</span></div>
+      </div>
+    </section>
+
+    <section id="chart-panel" class="panel data-panel">
+      <div class="head"><div><p class="eyebrow">PERFORMANCE</p><h2>Liquidation NAV</h2></div><span id="chart-note"></span></div>
+      <div id="chart"></div>
+    </section>
+
+    <section class="panel data-panel">
+      <div class="head"><div><p class="eyebrow">WEEKLY AUDIT</p><h2>Selected combination</h2></div><span>Missing data is not a strategy decision.</span></div>
+      <div class="scroll"><table><thead><tr><th>Entry</th><th>Delta as-of</th><th>Expiry</th><th>Spot</th><th>Status</th><th>Short</th><th>Delta</th><th>Entry bid</th><th>Exit ask</th></tr></thead><tbody id="decisions"></tbody></table></div>
+    </section>
+
+    <section class="panel data-panel">
+      <div class="head"><div><p class="eyebrow">BLOTTER</p><h2>Executed trades only</h2></div></div>
+      <div class="scroll"><table><thead><tr><th>Time</th><th>Action</th><th>Leg</th><th>RIC</th><th>Δ as-of</th><th>Delta</th><th>Bid</th><th>Ask</th><th>Fill</th><th>Fee</th><th>Cash Δ</th></tr></thead><tbody id="blotter"></tbody></table></div>
+    </section>
+
+    <section class="panel data-panel">
+      <div class="head"><div><p class="eyebrow">LEDGER</p><h2>Position and liquidation value</h2></div><span>Event snapshots, not “weeks skipped.”</span></div>
+      <div class="scroll"><table><thead><tr><th>Time</th><th>Event</th><th>Cash</th><th>Long bid</th><th>Long MV</th><th>Short ask</th><th>Short MV</th><th>NAV</th></tr></thead><tbody id="ledger"></tbody></table></div>
+    </section>
+  </main>
+  <script src="book.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
