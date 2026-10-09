@@ -104,7 +104,8 @@ def build_call_ric(
     month = CALL_MONTH[expiry.month]
     yy = f"{expiry.year % 100:02d}"
     token = strike_token(strike)
-    ric = f"{root}{month}{expiry.day}{yy}{token}{exchange}"
+    # OPRA RICs carry a two-digit day; "F52622000" (unpadded) matches no contract in LSEG.
+    ric = f"{root}{month}{expiry.day:02d}{yy}{token}{exchange}"
     today = as_of or date.today()
     if expiry < today:
         ric = f"{ric}^{month}{yy}"
@@ -129,6 +130,8 @@ def plan_expiries(bar_dates: list[date], extra_weeks: int = 5) -> list[date]:
 def verify_example() -> None:
     ric = build_call_ric("UUUU", date(2026, 8, 21), 14.5, as_of=date(2026, 9, 8))
     assert ric == "UUUUH212601450.U^H26", ric
+    single_digit = build_call_ric("NVDA", date(2026, 6, 5), 205.0, as_of=date(2026, 10, 8))
+    assert single_digit == "NVDAF052620500.U^F26", single_digit
 
 
 if __name__ == "__main__":

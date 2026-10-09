@@ -21,20 +21,13 @@
 
     <section class="panel data-panel">
       <div class="head"><div><p class="eyebrow">PARAMETER COMPARISON</p><h2>5 long targets × 3 short targets</h2></div><label class="picker">Detailed ledger <select id="combo"></select></label></div>
-      <div class="scroll"><table><thead><tr><th>Combination</th><th>Actual long Δ</th><th>Return</th><th>P&amp;L / long debit</th><th>Ending NAV</th><th>Event max DD</th><th>Trade weeks</th><th>Data gaps</th><th>AAPL B&amp;H</th></tr></thead><tbody id="comparison"></tbody></table></div>
+      <div class="scroll"><table><thead><tr><th>Combination</th><th>Actual long Δ</th><th>Return</th><th>P&amp;L / long debit</th><th>Ending NAV</th><th>Event max DD</th><th>Trade weeks</th><th>Assignments</th><th>Data gaps</th><th>AAPL B&amp;H</th></tr></thead><tbody id="comparison"></tbody></table></div>
       <p class="footnote">This is a sensitivity comparison, not an in-sample instruction to select the best-performing row.</p>
     </section>
 
     <section class="panel">
-      <div class="head"><div><p class="eyebrow">RULES</p><h2>Executable specification</h2></div></div>
-      <div class="rules">
-        <div><b>Long</b><span>From actual AAPL calls 270–450 DTE, test previous-close Delta targets 0.70, 0.75, 0.80, 0.85 and 0.90 (±0.03). Fill at the 10:00 ET ask.</span></div>
-        <div><b>Short</b><span>Test weekly-call Delta targets 0.20, 0.25 and 0.30, selecting the nearest prior-close Delta subject to a ±0.10 guardrail. A next-morning price gap does not retroactively remove a valid prior-close candidate. Fill at bid.</span></div>
-        <div><b>Calendar</b><span>Trade on the first exchange session of the week. A Monday holiday moves entry to the next open session.</span></div>
-        <div><b>Exit</b><span>Buy back the short at its expiry-session 15:00 ET ask; close the long at the final 15:00 ET bid.</span></div>
-        <div><b>Costs</b><span>$0.65 per contract per side. Open positions use liquidation value: long bid minus short ask.</span></div>
-        <div><b>No look-ahead</b><span>The Delta used to choose a contract is dated and shown for the session before execution.</span></div>
-      </div>
+      <div class="head"><div><p class="eyebrow">ANALYSIS</p><h2>What the 15 combinations show</h2></div></div>
+      <div id="analysis" class="analysis"></div>
     </section>
 
     <section id="chart-panel" class="panel data-panel">
@@ -44,7 +37,7 @@
 
     <section class="panel data-panel">
       <div class="head"><div><p class="eyebrow">WEEKLY AUDIT</p><h2>Selected combination</h2></div><span>Missing data is not a strategy decision.</span></div>
-      <div class="scroll"><table><thead><tr><th>Entry</th><th>Delta as-of</th><th>Expiry</th><th>Spot</th><th>Status</th><th>Short</th><th>Delta</th><th>Entry bid</th><th>Exit ask</th></tr></thead><tbody id="decisions"></tbody></table></div>
+      <div class="scroll"><table><thead><tr><th>Entry</th><th>Delta as-of</th><th>Expiry</th><th>Spot</th><th>Status</th><th>Short</th><th>Delta</th><th>Entry bid</th><th>15:00 ask</th><th>Expiry outcome</th></tr></thead><tbody id="decisions"></tbody></table></div>
     </section>
 
     <section class="panel data-panel">

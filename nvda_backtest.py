@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 from math import ceil
 from datetime import date, datetime, timedelta, timezone
@@ -11,7 +12,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "helios" / "python"))
 
 from option_rics import build_call_ric
 
-DATA_PATH = Path("/Users/pang/Downloads/NVDA.O (2).json")
+# Hourly NVDA.O bars saved from the Helios Data page. Set NVDA_BARS_PATH to use another copy.
+DATA_PATH = Path(os.environ.get("NVDA_BARS_PATH", "/Users/pang/Downloads/NVDA.O (2).json"))
 ENTRY_HOUR_UTC = 14  # 14:00 UTC = 10:00 ET during daylight saving time
 
 with DATA_PATH.open("r", encoding="utf-8") as file:
@@ -19,27 +21,59 @@ with DATA_PATH.open("r", encoding="utf-8") as file:
     
 bars = data["bars"]
 
+
+def bar_date(bar):
+    return datetime.fromisoformat(bar["time"]).date()
+
+
+def final_session_in_entry_week(entry_date, available_dates):
+    """Return the last observed trading session from Monday through Friday."""
+    monday = entry_date - timedelta(days=entry_date.weekday())
+    friday = monday + timedelta(days=4)
+    sessions = [
+        session
+        for session in available_dates
+        if entry_date <= session <= friday
+    ]
+    return max(sessions) if sessions else None
+
 # Determine the final date covered by the stock dataset.
-data_end = max(datetime.fromisoformat(bar["time"]).date() for bar in bars)
+available_dates = {bar_date(bar) for bar in bars}
+data_end = max(available_dates)
 
 entries = []
 
+entry_bars_by_date = {}
 for bar in bars:
     timestamp = datetime.fromisoformat(bar["time"])
-    
-    is_monday = timestamp.weekday() == 0
-    is_entry_time = (timestamp.hour == ENTRY_HOUR_UTC
-                     and timestamp.minute == 0
-                     and timestamp.second == 0)
-    
-    if not (is_monday and is_entry_time):
+    is_entry_time = (
+        timestamp.hour == ENTRY_HOUR_UTC
+        and timestamp.minute == 0
+        and timestamp.second == 0
+    )
+    if not is_entry_time:
         continue
+    entry_bars_by_date[timestamp.date()] = (timestamp, bar)
+
+sessions_by_week = {}
+for session in available_dates:
+    iso = session.isocalendar()
+    sessions_by_week.setdefault((iso.year, iso.week), []).append(session)
+
+for week_sessions in sorted(sessions_by_week.values(), key=min):
+    first_session = min(week_sessions)
+    entry_bar = entry_bars_by_date.get(first_session)
+    if entry_bar is None:
+        raise RuntimeError(f"Missing 10:00 ET stock bar on first session {first_session}")
+    timestamp, bar = entry_bar
+    # Enter on the first exchange session of each week.  A Monday holiday
+    # therefore moves the signal to Tuesday (or the next session available).
+    # Weeklies expire on the final exchange session of the week.  This is
+    # normally Friday, but can be Thursday in holiday weeks.
+    expiry = final_session_in_entry_week(timestamp.date(), available_dates)
     
-    # Monday + 4 calendar days = Friday.
-    expiry = timestamp.date() + timedelta(days=4)
-    
-    # Skip incomplete weeks when the dataset does not reach Friday expiry.
-    if expiry > data_end:
+    # Skip incomplete weeks when the tape has no later session that week.
+    if expiry is None or expiry <= timestamp.date() or expiry > data_end:
         continue
     
     entries.append(
@@ -68,14 +102,17 @@ for entry in entries:
     spot = entry["stock_fill"]
     expiry = entry["expiry"]
 
-    # Historical option chains are unavailable after expiry, so enumerate a
-    # narrow $2.50 grid around spot and let LSEG history validate each RIC.
-    strike_step = 2.5
-    center_strike = ceil(spot / strike_step) * strike_step
-    candidate_strikes = [
-        center_strike + offset * strike_step
-        for offset in range(-4, 5)
-    ]
+    # Include both common near-the-money grids.  Using only $2.50 increments
+    # can miss a $1 strike, while using only integers drops valid 2.50/7.50
+    # strikes such as 207.50.
+    one_dollar_center = ceil(spot)
+    two_fifty_center = ceil(spot / 2.5) * 2.5
+    candidate_strikes = sorted(
+        {
+            *(one_dollar_center + offset for offset in range(-10, 11)),
+            *(two_fifty_center + offset * 2.5 for offset in range(-4, 5)),
+        }
+    )
 
     for strike in candidate_strikes:
         strike = round(float(strike), 2)
@@ -174,13 +211,22 @@ for entry in entries:
         )
 
     if not valid_otm_quotes:
+        if not contracts_by_expiry.get(expiry_text):
+            status = "DATA_GAP"
+            reason = (
+                f"No LSEG contract history returned for {expiry_text}; "
+                "data gap, not evidence that NVDA had no listed call."
+            )
+        else:
+            status = "NO_QUOTE"
+            reason = "No valid 10:00 ET OTM quote with both BID and ASK."
         weekly_decisions.append(
             {
                 "entry_time": entry_time,
                 "expiry": expiry,
                 "spot": spot,
-                "status": "SKIP",
-                "reason": "No valid OTM call with both BID and ASK.",
+                "status": status,
+                "reason": reason,
             }
         )
         continue
@@ -197,8 +243,8 @@ for entry in entries:
                 "entry_time": entry_time,
                 "expiry": expiry,
                 "spot": spot,
-                "status": "SKIP",
-                "reason": "No Friday regular-session closing stock bar.",
+                "status": "DATA_GAP",
+                "reason": "No expiry-session regular-market closing stock bar.",
             }
         )
         continue
@@ -241,12 +287,12 @@ print(
 )
 
 for decision in weekly_decisions:
-    if decision["status"] == "SKIP":
+    if decision["status"] != "TRADE":
         print(
             f"{decision['entry_time']:%Y-%m-%d %H:%M}  "
             f"{decision['expiry']:%Y-%m-%d}  "
             f"{decision['spot']:>8.4f}  "
-            f"SKIP - {decision['reason']}"
+            f"{decision['status']} - {decision['reason']}"
         )
         continue
 
@@ -267,12 +313,17 @@ trade_count = sum(
     for decision in weekly_decisions
 )
 skip_count = sum(
-    decision["status"] == "SKIP"
+    decision["status"] == "DATA_GAP"
+    for decision in weekly_decisions
+)
+no_quote_count = sum(
+    decision["status"] == "NO_QUOTE"
     for decision in weekly_decisions
 )
 
 print(f"\nTrade weeks: {trade_count}")
-print(f"Skipped weeks: {skip_count}")
+print(f"Data-gap weeks: {skip_count}")
+print(f"No-quote weeks: {no_quote_count}")
 
 # Build the simulated trade blotter and an event-time Reg T ledger.
 START_CASH = 25_000.0
@@ -320,7 +371,7 @@ def add_blotter(
     )
 
 
-def add_ledger_snapshot(timestamp, stock_price, option_price=0.0):
+def add_ledger_snapshot(timestamp, stock_price, option_price=0.0, event="MARK"):
     if short_call is not None:
         call_expiry = date.fromisoformat(short_call["expiry"])
         call_label = (
@@ -343,6 +394,7 @@ def add_ledger_snapshot(timestamp, stock_price, option_price=0.0):
     ledger.append(
         {
             "date": timestamp,
+            "event": event,
             "cash": round(cash, 2),
             "shares": shares,
             "shortCalls": -1 if short_call is not None else 0,
@@ -369,11 +421,11 @@ for decision in weekly_decisions:
     )
     spot = decision["spot"]
 
-    if decision["status"] == "SKIP":
-        # A skipped option order is not a blotter event. If shares remain from
-        # an earlier expiry, mark them without changing cash.
+    if decision["status"] != "TRADE":
+        # A missing-data observation is not a blotter event. If shares remain
+        # from an earlier expiry, mark them without changing cash.
         if shares:
-            add_ledger_snapshot(entry_timestamp, spot)
+            add_ledger_snapshot(entry_timestamp, spot, event=decision["status"].replace("_", " "))
         continue
 
     opened_stock_this_week = shares == 0
@@ -435,7 +487,7 @@ for decision in weekly_decisions:
             "Limit = mid."
         ),
     )
-    add_ledger_snapshot(entry_timestamp, spot, decision["mid"])
+    add_ledger_snapshot(entry_timestamp, spot, decision["mid"], event="ENTRY")
 
     expiry_timestamp = f"{decision['expiry'].isoformat()} 16:00 ET"
 
@@ -453,7 +505,7 @@ for decision in weekly_decisions:
             expiry=decision["expiry"].isoformat(),
             occ=call_label,
             note=(
-                f"Friday OTM: close ${decision['expiry_stock_close']:.2f} "
+                f"Expiry-session OTM: close ${decision['expiry_stock_close']:.2f} "
                 f"≤ {decision['strike']:g}C. Exit = wait; keep shares and premium."
             ),
         )
@@ -472,7 +524,7 @@ for decision in weekly_decisions:
             expiry=decision["expiry"].isoformat(),
             occ=call_label,
             note=(
-                f"Friday ITM: close ${decision['expiry_stock_close']:.2f} "
+                f"Expiry-session ITM: close ${decision['expiry_stock_close']:.2f} "
                 f"> {decision['strike']:g}C. Exit = wait; short call assigned."
             ),
         )
@@ -500,7 +552,15 @@ for decision in weekly_decisions:
     add_ledger_snapshot(
         expiry_timestamp,
         decision["expiry_stock_close"],
+        event=decision["outcome"],
     )
+
+
+def serialize_decision(decision):
+    row = dict(decision)
+    row["entry_time"] = decision["entry_time"].isoformat(sep=" ")
+    row["expiry"] = decision["expiry"].isoformat()
+    return row
 
 backtest_output = {
     "underlying": "NVDA",
@@ -509,7 +569,12 @@ backtest_output = {
     "maintPct": MAINT_PCT,
     "blotter": blotter,
     "ledger": ledger,
+    "weeklyDecisions": [serialize_decision(d) for d in weekly_decisions],
     "tradeWeeks": trade_count,
+    "dataGapWeeks": skip_count,
+    "noQuoteWeeks": no_quote_count,
+    # Kept for older renderers.  These rows are missing data, not deliberate
+    # strategy skips.
     "skippedWeeks": skip_count,
 }
 

@@ -61,11 +61,32 @@
     })
     .join("");
 
+  const weeklyBody = document.getElementById("weekly-body");
+  if (weeklyBody) {
+    weeklyBody.innerHTML = (B.weeklyDecisions || [])
+      .map((w) => {
+        const traded = w.status === "TRADE";
+        const detail = traded
+          ? `${w.ric}<div style="color:var(--faint);font-size:10px">${Number(w.strike).toFixed(2)}C · mid ${Number(w.mid).toFixed(3)}</div>`
+          : w.reason;
+        return `<tr>
+          <td class="mono" style="color:var(--muted);white-space:nowrap">${String(w.entry_time).slice(0, 16)} UTC</td>
+          <td class="mono">${w.expiry}</td>
+          <td class="mono">${Number(w.spot).toFixed(2)}</td>
+          <td class="mono ${traded ? "accent" : "down"}">${w.status}</td>
+          <td class="${traded ? "mono" : ""}" style="color:var(--muted)">${detail}</td>
+          <td class="mono">${w.outcome || "—"}</td>
+        </tr>`;
+      })
+      .join("");
+  }
+
   document.getElementById("ledger-body").innerHTML = B.ledger
     .map((r) => {
       const call = r.shortCalls ? `${r.shortCalls} ${r.callLabel}` : "flat";
       return `<tr>
         <td class="mono" style="color:var(--muted)">${r.date}</td>
+        <td class="mono">${r.event || "MARK"}</td>
         <td class="mono">${money(r.cash)}</td>
         <td class="mono">${r.shares}</td>
         <td class="mono accent">${call}</td>

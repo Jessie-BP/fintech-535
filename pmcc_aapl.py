@@ -2,7 +2,8 @@
 
 Selection uses the previous trading session's daily TR.DELTA. Execution uses
 the next session's 10:00 ET hourly quote: buy the long call at ask and sell the
-short call at bid. Short calls are bought back at ask at 15:00 ET on expiry.
+short call at bid. At expiry, only non-trivial or near/ITM shorts are bought
+back; clearly OTM five-cent-or-less calls are allowed to expire.
 """
 
 from __future__ import annotations
@@ -40,8 +41,12 @@ SHORT_TARGET_DELTAS = (0.20, 0.25, 0.30)
 LONG_DELTA_TOLERANCE = 0.03
 SHORT_DELTA_TOLERANCE = 0.10
 SHORT_REFINEMENT_THRESHOLD = 0.03
+# LSEG lists some weekly expiries only on $2.50 strikes (the $5 multiples do not exist for
+# them), so a $5 search finds no Delta at all for those weeks and reports a data gap.
+SHORT_STRIKE_STEP = 2.5
 COMMISSION = 0.65
 STARTING_CASH = 25_000.0
+WORTHLESS_ASK_THRESHOLD = 0.05
 
 CALL_MONTH = {month: chr(ord("A") + month - 1) for month in range(1, 13)}
 
@@ -343,7 +348,7 @@ def covers_targets(
 def midpoint_strikes_for_missing_targets(
     rows: list[dict[str, Any]], targets: tuple[float, ...], tolerance: float
 ) -> list[float]:
-    """Return only $2.50 strikes that can improve an uncovered target."""
+    """Return only strikes on the search grid that can improve an uncovered target."""
     ordered = sorted(rows, key=lambda row: row["strike"])
     strikes: set[float] = set()
     for target in targets:
@@ -360,7 +365,7 @@ def midpoint_strikes_for_missing_targets(
         )
         if bracket is not None:
             midpoint = (float(bracket[0]["strike"]) + float(bracket[1]["strike"])) / 2
-            if not math.isclose(midpoint % 5.0, 0.0, abs_tol=1e-9):
+            if math.isclose(midpoint % SHORT_STRIKE_STEP, 0.0, abs_tol=1e-9):
                 strikes.add(round(midpoint, 2))
     return sorted(strikes)
 
@@ -507,7 +512,7 @@ def fetch_dataset() -> dict[str, Any]:
             # LSEG Search does not retain expired equity options. Construct the
             # documented expired RICs, then retain only contracts for which LSEG
             # returns a Delta dated exactly deltaAsOf.
-            strikes = grid(spot * 0.96, spot * 1.12, 5.0)
+            strikes = grid(spot * 0.96, spot * 1.12, SHORT_STRIKE_STEP)
             candidates = candidate_rics(expiry, strikes, ric_as_of)
             # Delta is observed at the prior close. Do not discard that
             # point-in-time selection merely because an overnight move makes
@@ -692,6 +697,7 @@ def run_backtest(
         )
     long_bars = selected_long["bars"]
     first = data["schedule"][0]
+    stock_by_time = {row["time"]: row for row in data["stock"]}
     long_entry_quote = quote_at(long_bars, first["entryTime"])
     if not valid_quote(long_entry_quote):
         raise RuntimeError("Selected long call has no valid entry BID/ASK")
@@ -781,32 +787,91 @@ def run_backtest(
             )
         )
 
-        close_cost = float(exit_quote["ask"]) * 100 + COMMISSION
-        cash -= close_cost
-        blotter.append(
-            {
-                "time": week["exitTime"],
-                "action": "BTC",
-                "leg": "SHORT",
-                "ric": short["ric"],
-                "strike": short["strike"],
-                "expiry": short["expiry"],
-                "deltaAsOf": None,
-                "delta": None,
-                "bid": exit_quote["bid"],
-                "ask": exit_quote["ask"],
-                "fill": exit_quote["ask"],
-                "fee": COMMISSION,
-                "cashChange": round(-close_cost, 2),
-                "rule": "Close at 15:00 ET on expiry to avoid assignment",
-            }
+        stock_expiry_bar = stock_by_time.get(week["exitTime"])
+        if not stock_expiry_bar or stock_expiry_bar.get("open") is None or stock_expiry_bar.get("close") is None:
+            raise RuntimeError(f"Missing AAPL expiry-hour bar at {week['exitTime']}")
+        spot_at_15 = float(stock_expiry_bar["open"])
+        official_close = float(stock_expiry_bar["close"])
+        clearly_otm = (
+            spot_at_15 < float(short["strike"])
+            and float(exit_quote["ask"]) <= WORTHLESS_ASK_THRESHOLD
         )
-        long_exit_mark = quote_at(long_bars, week["exitTime"])
-        if not valid_quote(long_exit_mark):
-            raise RuntimeError(f"Missing long-call mark at {week['exitTime']}")
-        ledger.append(
-            snapshot(week["exitTime"], "SHORT EXIT", cash, selected_long["ric"], long_exit_mark)
-        )
+
+        if clearly_otm:
+            expiry_time = f"{week['expiry']} 20:00:00"
+            assigned = official_close > float(short["strike"])
+            assignment_pnl = (
+                (float(short["strike"]) - official_close) * 100 if assigned else 0.0
+            )
+            cash += assignment_pnl
+            action = "ASSIGN_COVER" if assigned else "EXPIRE"
+            outcome = "ASSIGNED" if assigned else "EXPIRED_OTM"
+            blotter.append(
+                {
+                    "time": expiry_time,
+                    "action": action,
+                    "leg": "SHORT",
+                    "ric": short["ric"],
+                    "strike": short["strike"],
+                    "expiry": short["expiry"],
+                    "deltaAsOf": None,
+                    "delta": None,
+                    "bid": None,
+                    "ask": None,
+                    "fill": 0.0,
+                    "fee": 0.0,
+                    "cashChange": round(assignment_pnl, 2),
+                    "rule": (
+                        "Assignment plus same-close stock-cover proxy"
+                        if assigned
+                        else "Clearly OTM and ask <= $0.05; expire worthless"
+                    ),
+                }
+            )
+            long_exit_mark = quote_at(long_bars, expiry_time)
+            if not valid_quote(long_exit_mark):
+                raise RuntimeError(f"Missing long-call mark at {expiry_time}")
+            ledger.append(
+                snapshot(
+                    expiry_time,
+                    "SHORT ASSIGNED" if assigned else "SHORT EXPIRES OTM",
+                    cash,
+                    selected_long["ric"],
+                    long_exit_mark,
+                )
+            )
+        else:
+            close_cost = float(exit_quote["ask"]) * 100 + COMMISSION
+            cash -= close_cost
+            outcome = "BOUGHT_BACK_15_ET"
+            assignment_pnl = 0.0
+            blotter.append(
+                {
+                    "time": week["exitTime"],
+                    "action": "BTC",
+                    "leg": "SHORT",
+                    "ric": short["ric"],
+                    "strike": short["strike"],
+                    "expiry": short["expiry"],
+                    "deltaAsOf": None,
+                    "delta": None,
+                    "bid": exit_quote["bid"],
+                    "ask": exit_quote["ask"],
+                    "fill": exit_quote["ask"],
+                    "fee": COMMISSION,
+                    "cashChange": round(-close_cost, 2),
+                    "rule": "Buy back non-trivial or near/ITM short at 15:00 ET",
+                }
+            )
+            long_exit_mark = quote_at(long_bars, week["exitTime"])
+            if not valid_quote(long_exit_mark):
+                raise RuntimeError(f"Missing long-call mark at {week['exitTime']}")
+            ledger.append(
+                snapshot(
+                    week["exitTime"], "SHORT BOUGHT BACK", cash,
+                    selected_long["ric"], long_exit_mark,
+                )
+            )
         decision.update(
             {
                 "shortRic": short["ric"],
@@ -814,6 +879,10 @@ def run_backtest(
                 "shortDelta": short["delta"],
                 "entryBid": entry_quote["bid"],
                 "exitAsk": exit_quote["ask"],
+                "spotAt15": round(spot_at_15, 4),
+                "officialClose": round(official_close, 4),
+                "expiryOutcome": outcome,
+                "assignmentPnl": round(assignment_pnl, 2),
                 "shortStrikeBelowLongBreakeven": (
                     float(short["strike"]) < float(selected_long["breakeven"])
                 ),
@@ -869,15 +938,16 @@ def run_backtest(
 
     short_sales = [row for row in blotter if row["leg"] == "SHORT" and row["action"] == "SELL"]
     short_closes = [row for row in blotter if row["leg"] == "SHORT" and row["action"] == "BTC"]
-    if len(short_sales) != len(short_closes):
-        raise AssertionError("Every opened short must have exactly one closing trade")
+    short_expiries = [row for row in blotter if row["action"] == "EXPIRE"]
+    short_assignments = [row for row in blotter if row["action"] == "ASSIGN_COVER"]
+    if len(short_sales) != len(short_closes) + len(short_expiries) + len(short_assignments):
+        raise AssertionError("Every opened short must have exactly one terminal event")
     cash_from_blotter = STARTING_CASH + sum(float(row["cashChange"]) for row in blotter)
     if not math.isclose(cash, cash_from_blotter, abs_tol=0.011):
         raise AssertionError("Blotter cash changes do not reconcile to ending cash")
     premium_collected = sum(float(row["fill"]) * 100 for row in short_sales)
     short_close_cost = sum(float(row["fill"]) * 100 for row in short_closes)
 
-    stock_by_time = {row["time"]: row for row in data["stock"]}
     stock_entry = float(stock_by_time[first["entryTime"]]["open"])
     stock_exit_row = stock_by_time.get(final_time)
     if not stock_exit_row or stock_exit_row.get("close") is None:
@@ -911,6 +981,19 @@ def run_backtest(
         "premiumCollected": round(premium_collected, 2),
         "shortCloseCost": round(short_close_cost, 2),
         "shortNetBeforeFees": round(premium_collected - short_close_cost, 2),
+        "shortLifecyclePnlBeforeFees": round(
+            premium_collected
+            - short_close_cost
+            + sum(float(row["cashChange"]) for row in short_assignments),
+            2,
+        ),
+        "shortsBoughtBack": len(short_closes),
+        "shortsExpiredOtm": len(short_expiries),
+        "assignments": len(short_assignments),
+        "assignmentSettlementPnl": round(
+            sum(float(row["cashChange"]) for row in short_assignments), 2
+        ),
+        "worthlessAskThreshold": WORTHLESS_ASK_THRESHOLD,
         "tradeWeeks": sum(row["status"] == "TRADE" for row in decisions),
         "dataGapWeeks": sum(row["status"] == "DATA_GAP" for row in decisions),
         "noTargetWeeks": sum(row["status"] == "NO_TARGET" for row in decisions),
