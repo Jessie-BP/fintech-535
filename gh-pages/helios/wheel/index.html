@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>AAPL Wheel backtest</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <main>
+    <nav class="nav-links"><a href="../">Blotter</a><a href="../pmcc/">PMCC</a><a href="../data.html">Data</a><a href="../assignment.html">Assignment</a></nav>
+    <header>
+      <p class="eyebrow">LSEG · POINT-IN-TIME OPTIONS BACKTEST</p>
+      <h1>AAPL Wheel</h1>
+      <p class="lead">Sell a cash-secured put every week. If assigned, hold the shares and sell covered calls against them. If called away, start again. Every selection uses the prior session's daily Delta; every fill uses the next session's 10:00 ET bid/ask.</p>
+    </header>
+
+    <div id="pending" class="notice" hidden>Waiting for the verified LSEG pull. No synthetic trades are displayed.</div>
+    <section id="metrics" class="metrics"></section>
+
+    <section class="panel thesis">
+      <div class="head"><div><p class="eyebrow">THESIS</p><h2>Why the wheel should help, and did it?</h2></div></div>
+      <div id="thesis"></div>
+    </section>
+
+    <section id="chart-panel" class="panel data-panel">
+      <div class="head"><div><p class="eyebrow">PERFORMANCE</p><h2>Liquidation NAV vs AAPL buy-and-hold</h2></div><span id="chart-note"></span></div>
+      <div id="chart"></div>
+    </section>
+
+    <section class="panel data-panel">
+      <div class="head"><div><p class="eyebrow">PORTFOLIO VIEWER</p><h2>Exact holdings at any point in time</h2></div><span>Drag the slider or use the buttons. Rebuilt from the blotter at every hourly bar.</span></div>
+      <div class="tl-row"><button id="prev">&larr; bar</button><button id="next">bar &rarr;</button><button id="prev-ev">&larr; trade</button><button id="next-ev">trade &rarr;</button><span class="when" id="when"></span></div>
+      <input id="slider" class="slider" type="range" min="0" value="0"/>
+      <div id="portfolio" class="pf"></div>
+      <p class="footnote" id="pf-note"></p>
+    </section>
+
+    <section class="panel data-panel">
+      <div class="head"><div><p class="eyebrow">FILL ASSUMPTIONS</p><h2>Stated and checked against the data</h2></div></div>
+      <div id="assumptions" class="assump"></div>
+    </section>
+
+    <section class="panel data-panel">
+      <div class="head"><div><p class="eyebrow">WEEKLY AUDIT</p><h2>Every week, including the ones with no trade</h2></div><span>Missing data is not a strategy decision.</span></div>
+      <div class="scroll"><table><thead><tr><th>Entry</th><th>Expiry</th><th>State</th><th>Status</th><th>Short</th><th>Strike</th><th>Delta</th><th>Bid</th><th>Ask</th><th>Fill</th><th>Close</th><th>Outcome</th></tr></thead><tbody id="decisions"></tbody></table></div>
+    </section>
+
+    <section class="panel data-panel">
+      <div class="head"><div><p class="eyebrow">BLOTTER</p><h2>Every order, assignment and expiry</h2></div></div>
+      <div class="scroll"><table><thead><tr><th>#</th><th>Time (UTC)</th><th>Action</th><th>Type</th><th>Leg</th><th>RIC</th><th>Strike</th><th>Δ as-of</th><th>Bid</th><th>Ask</th><th>Fill</th><th>Fee</th><th>Cash Δ</th><th>Rule</th></tr></thead><tbody id="blotter"></tbody></table></div>
+    </section>
+
+    <section class="panel data-panel">
+      <div class="head"><div><p class="eyebrow">LEDGER</p><h2>Cash, shares, short option and NAV after each event</h2></div></div>
+      <div class="scroll"><table><thead><tr><th>Time</th><th>Event</th><th>Cash</th><th>Shares</th><th>AAPL</th><th>Stock MV</th><th>Short option</th><th>Option MV</th><th>Put collateral</th><th>NAV</th></tr></thead><tbody id="ledger"></tbody></table></div>
+    </section>
+  </main>
+  <script src="book.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
