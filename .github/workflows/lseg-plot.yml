@@ -1,0 +1,51 @@
+name: LSEG plot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 21 * * 1-5"   # 21:30 UTC weekdays, after the US close
+
+concurrency:
+  group: lseg-plot
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install lseg-data pandas plotly
+
+      - name: Generate plot
+        env:
+          LSEG_APP_KEY: ${{ secrets.LSEG_APP_KEY }}
+          LSEG_USERNAME: ${{ secrets.LSEG_USERNAME }}
+          LSEG_PASSWORD: ${{ secrets.LSEG_PASSWORD }}
+        run: python scripts/lseg_plot.py
+
+      - name: Commit and push plot
+        id: commit
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update LSEG plot"
+          file_pattern: gh-pages/helios/lseg-plot/*.html
+
+      # Pushes made with GITHUB_TOKEN do not trigger other workflows,
+      # so start the Pages deploy explicitly.
+      - name: Redeploy Pages
+        if: steps.commit.outputs.changes_detected == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main

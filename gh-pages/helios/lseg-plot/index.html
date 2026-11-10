@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>AAPL LSEG Plot</title>
+  <link rel="stylesheet" href="../styles.css"/>
+  <style>
+    .plot-nav{display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap}
+    .plot-nav a{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.06em;color:var(--muted)}
+    .plot-nav a:hover{color:var(--accent)}
+    .plot-frame{width:100%;height:680px;border:1px solid var(--line);border-radius:8px;background:#0b1512}
+    .footnote{color:var(--muted);font-size:12px;margin:12px 0 0}
+  </style>
+</head>
+<body>
+  <main>
+    <nav class="plot-nav"><a href="../">Blotter</a><a href="../pmcc/">PMCC</a><a href="../wheel/">Wheel</a><a href="../data.html">Data</a></nav>
+    <header>
+      <p class="eyebrow">LSEG · GITHUB ACTION · PLOTLY</p>
+      <h1>AAPL daily price</h1>
+      <p class="lead">A GitHub Action pulls one year of AAPL.O daily bars from LSEG every weekday after the close, redraws this Plotly chart, commits it, and redeploys the site.</p>
+    </header>
+    <section class="panel">
+      <iframe class="plot-frame" src="aapl-price.html" title="AAPL daily price chart" loading="lazy"></iframe>
+      <p class="footnote">Source: <code>scripts/lseg_plot.py</code> · Workflow: <code>.github/workflows/lseg-plot.yml</code></p>
+    </section>
+  </main>
+</body>
+</html>
