@@ -36,10 +36,8 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update nightly NVDA orders"
-          file_pattern: |
-            open_orders.json
-            mkt/open_orders.json
-            gh-pages/helios/orders/signal.json
+          # One line, space-separated: the action reads only the first line of this input.
+          file_pattern: open_orders.json mkt/open_orders.json gh-pages/helios/orders/signal.json
       - name: Redeploy Pages
         if: steps.commit.outputs.changes_detected == 'true'
         env:
