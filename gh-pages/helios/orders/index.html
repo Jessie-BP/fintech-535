@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NVDA Nightly Orders · Helios Tape</title>
+  <style>
+    :root{color-scheme:dark;--bg:#08111a;--panel:#101f2a;--line:#25404a;--text:#e8f4f1;--muted:#93aaa9;--mint:#40e0bd;--amber:#f5ba5c}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,sans-serif}
+    a{color:var(--mint)}.wrap{max-width:1050px;margin:auto;padding:24px}.nav{display:flex;justify-content:space-between;gap:20px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:18px;flex-wrap:wrap}
+    .brand{font-size:14px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}.navlinks{display:flex;gap:18px;flex-wrap:wrap;font-size:14px}
+    .hero{padding:58px 0 34px}.eyebrow{color:var(--mint);font-size:12px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}h1{font-size:clamp(38px,6vw,68px);line-height:1.05;letter-spacing:-.055em;margin:12px 0 20px}h2{font-size:23px;margin:0 0 12px}h3{font-size:17px;margin:0 0 8px}
+    .lead{max-width:720px;font-size:19px;color:#c7d8d5}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card,.section{background:var(--panel);border:1px solid var(--line);border-radius:13px}.card{padding:18px}.label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}.value{font-size:28px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}.section{padding:26px;margin-top:18px}.section p{color:#c7d8d5;margin:8px 0 14px}.pill{display:inline-block;color:var(--mint);border:1px solid var(--mint);border-radius:99px;padding:3px 11px;font-size:12px;font-weight:700;letter-spacing:.08em}
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.step{border-top:2px solid var(--mint);padding-top:12px}.num{color:var(--amber);font-size:12px;font-weight:700;letter-spacing:.12em}pre{background:#07141b;border:1px solid var(--line);border-radius:9px;padding:18px;overflow:auto;color:#d9f1e9;font-size:13px;line-height:1.5}code{font-family:ui-monospace,SFMono-Regular,monospace}ul{padding-left:20px;color:#c7d8d5}li{margin:6px 0}.links{display:flex;flex-wrap:wrap;gap:16px;margin-top:18px;font-size:14px}.note{font-size:13px;color:var(--muted)}
+    @media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:1fr}.wrap{padding:16px}.hero{padding-top:36px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav"><div class="brand">Helios Tape / Orders</div><div class="navlinks"><a href="../">Blotter</a><a href="../wheel/">Wheel</a><a href="https://github.com/Jessie-BP/fintech-535">Source</a></div></nav>
+    <header class="hero"><div class="eyebrow">FinTech 535 · Automated order generation</div><h1>One signal.<br>One NVDA share.</h1><p class="lead">Every evening at 10 p.m. New York time, a GitHub Action reads NVDA closing prices from LSEG, checks the existing position, and writes Sanji orders for the next NASDAQ session.</p><span class="pill" id="status">Loading latest signal</span></header>
+    <div class="grid">
+      <div class="card"><div class="label">Last close</div><div class="value" id="close">—</div></div>
+      <div class="card"><div class="label">20-day mean</div><div class="value" id="ma20">—</div></div>
+      <div class="card"><div class="label">50-day mean</div><div class="value" id="ma50">—</div></div>
+      <div class="card"><div class="label">Next session</div><div class="value" id="session" style="font-size:21px">—</div></div>
+    </div>
+    <section class="section"><h2>Latest open orders</h2><p id="summary">Reading the published signal…</p><pre id="orders">[]</pre><p class="note">This page displays the generated order file. It does not place trades. Sanji's order resolver is described in the course specification and is not active yet.</p></section>
+    <section class="section"><h2>How the algorithm works</h2><div class="steps"><div class="step"><div class="num">01 / INPUT</div><h3>Use only known closes</h3><p>Pull roughly 150 calendar days of NVDA daily <code>TRDPRC_1</code> from LSEG. Require 50 valid closes and require the newest close to match the last completed NASDAQ session.</p></div><div class="step"><div class="num">02 / SIGNAL</div><h3>Compare moving averages</h3><p>If the mean of the last 20 closes exceeds the mean of the last 50 closes, target 1 share. Otherwise, target 0. The strict comparison puts ties in cash.</p></div><div class="step"><div class="num">03 / ORDERS</div><h3>Trade the difference</h3><p>Read <code>mkt/positions.json</code> when present. Buy the shares needed to reach 1 or sell shares needed to reach 0. If already at target, write <code>[]</code>.</p></div></div></section>
+    <section class="section"><h2>Why this design</h2><p>A moving average rule is transparent and needs only daily stock prices. Holding at most one share keeps the assignment's order mechanics visible without options chain assumptions. The strategy reacts slowly to trend changes, may whipsaw in sideways markets, and uses the next session's market open, which can differ materially from the prior close.</p><p>The order <code>id</code> contains the session date and side, so a repeated nightly run for the same session produces the same identifier. Orders use NVDA's IB conid <code>4815747</code>, the <code>underlying</code> contract, and only fields from the <a href="https://jakevestal.github.io/server-logic-533/order.html">Sanji specification</a>. A data fetch or calendar validation failure stops the job before either order file is overwritten.</p><p>The root <code>open_orders.json</code> satisfies the assignment's requested location. An identical <code>mkt/open_orders.json</code> supports the path in Sanji's published schema. The workflow commits both files and this page's signal data, then triggers Pages deployment.</p><div class="links"><a href="https://github.com/Jessie-BP/fintech-535/blob/main/.github/workflows/nvda-orders.yml">Nightly Action ↗</a><a href="https://github.com/Jessie-BP/fintech-535/blob/main/scripts/nvda_orders.py">Python strategy ↗</a><a href="https://github.com/Jessie-BP/fintech-535/blob/main/open_orders.json">Root orders ↗</a><a href="https://www.interactivebrokers.com/campus/ibkr-api-page/contracts/">IBKR contract IDs ↗</a></div></section>
+  </div>
+  <script>
+    const set=(id,v)=>document.getElementById(id).textContent=v;
+    fetch('signal.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(d=>{
+      set('status',d.status || ('LSEG close '+d.as_of));
+      if(d.close!=null)set('close','$'+Number(d.close).toFixed(2));
+      if(d.ma20!=null)set('ma20','$'+Number(d.ma20).toFixed(2));
+      if(d.ma50!=null)set('ma50','$'+Number(d.ma50).toFixed(2));
+      if(d.for)set('session',d.for);
+      const orders=Array.isArray(d.orders)?d.orders:[];
+      set('orders',JSON.stringify(orders,null,2));
+      set('summary',d.status || (orders.length ? `${orders.length} order for ${d.for}; held ${d.held_shares}, target ${d.target_shares} NVDA share(s).` : `No trade for ${d.for}; held ${d.held_shares}, target ${d.target_shares} NVDA share(s).`));
+    }).catch(e=>{set('status','Signal unavailable');set('summary','Could not load signal.json: '+e.message)});
+  </script>
+</body>
+</html>

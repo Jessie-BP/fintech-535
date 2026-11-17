@@ -1,0 +1,57 @@
+name: Nightly NVDA orders
+
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub cron is UTC. Both runs cover 22:00 New York across DST.
+    - cron: "0 2,3 * * *"
+
+concurrency:
+  group: nvda-orders
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check New York time
+        id: clock
+        run: |
+          if [ "$(TZ=America/New_York date +%H)" = "22" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install dependencies
+        if: steps.clock.outputs.run == 'true'
+        run: pip install lseg-data pandas pandas-market-calendars
+      - name: Generate Sanji orders
+        if: steps.clock.outputs.run == 'true'
+        env:
+          LSEG_APP_KEY: ${{ secrets.LSEG_APP_KEY }}
+          LSEG_USERNAME: ${{ secrets.LSEG_USERNAME }}
+          LSEG_PASSWORD: ${{ secrets.LSEG_PASSWORD }}
+        run: python scripts/nvda_orders.py
+      - name: Commit orders and site data
+        if: steps.clock.outputs.run == 'true'
+        id: commit
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update nightly NVDA orders"
+          file_pattern: |
+            open_orders.json
+            mkt/open_orders.json
+            gh-pages/helios/orders/signal.json
+      - name: Redeploy Pages
+        if: steps.commit.outputs.changes_detected == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main

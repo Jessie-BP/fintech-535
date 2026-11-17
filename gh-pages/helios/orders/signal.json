@@ -1,0 +1,5 @@
+{
+  "strategy": "NVDA 20/50-day moving average",
+  "status": "Awaiting first nightly LSEG run",
+  "orders": []
+}
