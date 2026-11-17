@@ -100,38 +100,54 @@ def share_count(book: object) -> int:
     return total
 
 
-def next_session(as_of: date) -> date:
+def nasdaq_schedule(now: datetime):
     import pandas_market_calendars as mcal
 
-    schedule = mcal.get_calendar("NASDAQ").schedule(
-        start_date=as_of + timedelta(days=1), end_date=as_of + timedelta(days=14)
+    day = now.astimezone(ZoneInfo("America/New_York")).date()
+    return mcal.get_calendar("NASDAQ").schedule(
+        start_date=day - timedelta(days=14), end_date=day + timedelta(days=14)
     )
-    if schedule.empty:
+
+
+def next_session(now: datetime) -> date:
+    """First session that has not opened yet. Orders cannot target a session already trading."""
+    import pandas as pd
+
+    schedule = nasdaq_schedule(now)
+    upcoming = schedule[schedule["market_open"] > pd.Timestamp(now)]
+    if upcoming.empty:
         raise RuntimeError("No next NASDAQ session found")
-    return schedule.index[0].date()
+    return upcoming.index[0].date()
 
 
-def latest_session(as_of: date) -> date:
-    import pandas_market_calendars as mcal
+def latest_session(now: datetime) -> date:
+    """Last session that has already closed, so its daily close is final.
 
-    schedule = mcal.get_calendar("NASDAQ").schedule(
-        start_date=as_of - timedelta(days=14), end_date=as_of
-    )
-    if schedule.empty:
+    GitHub can start the 03:00 UTC run hours late, e.g. 06:30 New York the next
+    morning. Using the calendar date there would treat today's not-yet-open
+    session as the latest one and call yesterday's close stale.
+    """
+    import pandas as pd
+
+    schedule = nasdaq_schedule(now)
+    done = schedule[schedule["market_close"] <= pd.Timestamp(now)]
+    if done.empty:
         raise RuntimeError("No recent NASDAQ session found")
-    return schedule.index[-1].date()
+    return done.index[-1].date()
 
 
-def plan(closes: list[tuple[date, float]], held: int, today: date) -> tuple[list[dict], dict]:
-    clean = sorted((day, price) for day, price in closes if day <= today and math.isfinite(price) and price > 0)
+def plan(closes: list[tuple[date, float]], held: int, now: datetime) -> tuple[list[dict], dict]:
+    last = latest_session(now)
+    # Drop any partial bar for a session still trading (manual run during market hours).
+    clean = sorted((day, price) for day, price in closes if day <= last and math.isfinite(price) and price > 0)
     if len(clean) < 50 or len({day for day, _ in clean}) != len(clean):
         raise ValueError("Need at least 50 distinct, valid daily closes")
-    if clean[-1][0] != latest_session(today):
-        raise ValueError(f"Latest LSEG price is stale: {clean[-1][0]}")
+    if clean[-1][0] != last:
+        raise ValueError(f"Latest LSEG price is stale: {clean[-1][0]}, expected {last}")
     ma20 = sum(price for _, price in clean[-20:]) / 20
     ma50 = sum(price for _, price in clean[-50:]) / 50
     target = TARGET_SHARES if ma20 > ma50 else 0
-    session = next_session(today)
+    session = next_session(now)
     delta = target - held
     orders = []
     if delta:
@@ -166,10 +182,10 @@ def write_json(path: Path, data: object) -> None:
 
 
 def main() -> None:
-    today = datetime.now(ZoneInfo("America/New_York")).date()
+    now = datetime.now(ZoneInfo("UTC"))
     book_path = ROOT / "mkt" / "positions.json"
     book = json.loads(book_path.read_text()) if book_path.exists() else {}
-    orders, signal = plan(fetch_closes(), share_count(book), today)
+    orders, signal = plan(fetch_closes(), share_count(book), now)
     # The assignment requests a root file; Sanji's published schema reads mkt/.
     write_json(ROOT / "open_orders.json", orders)
     write_json(ROOT / "mkt" / "open_orders.json", orders)

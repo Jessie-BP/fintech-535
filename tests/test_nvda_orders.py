@@ -1,6 +1,7 @@
 import importlib.util
 import unittest
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from unittest.mock import patch
 
@@ -44,6 +45,26 @@ class OrderPlanningTests(unittest.TestCase):
         self.assertEqual((generated[0]["action"], generated[0]["qty"]), ("SEL", 1))
         self.assertEqual(signal["target_shares"], 0)
         self.assertEqual(self.plan(bearish, 0)[0], [])
+
+    def test_sessions_follow_the_clock_not_the_date(self):
+        try:
+            import pandas_market_calendars  # noqa: F401
+        except ImportError:
+            self.skipTest("pandas_market_calendars not installed")
+        utc = ZoneInfo("UTC")
+        cases = [
+            # On time: 03:00 UTC Tue = 22:00 Mon New York.
+            (datetime(2026, 11, 17, 3, 0, tzinfo=utc), date(2026, 11, 16), date(2026, 11, 17)),
+            # GitHub started it late: 06:32 Tue New York, before the open.
+            (datetime(2026, 11, 17, 11, 32, tzinfo=utc), date(2026, 11, 16), date(2026, 11, 17)),
+            # Mid-session manual run: plan tomorrow off yesterday's close.
+            (datetime(2026, 11, 17, 16, 0, tzinfo=utc), date(2026, 11, 16), date(2026, 11, 18)),
+            # Friday night plans Monday.
+            (datetime(2026, 11, 21, 3, 0, tzinfo=utc), date(2026, 11, 20), date(2026, 11, 23)),
+        ]
+        for now, last, nxt in cases:
+            self.assertEqual(orders.latest_session(now), last, now)
+            self.assertEqual(orders.next_session(now), nxt, now)
 
     def test_position_parser_and_invalid_data(self):
         self.assertEqual(orders.share_count({"positions": [{"conid": 4815747, "qty": 1}]}), 1)
