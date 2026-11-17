@@ -277,5 +277,10 @@
         "volume": 16284032.0
       }
     }
+  },
+  "4815747": {
+    "tracked": true,
+    "name": "NVIDIA CORP",
+    "price_history": {}
   }
 }
