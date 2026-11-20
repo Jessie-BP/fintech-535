@@ -43,6 +43,10 @@ class OrderPlanningTests(unittest.TestCase):
             "ref": "open",
         }])
         self.assertEqual(signal["trend"], "up")
+        # Chart history: one point per session that has a 50-day mean, newest last.
+        self.assertEqual(len(signal["history"]), 70 - 49)
+        self.assertEqual(signal["history"][-1]["c"], 169)
+        self.assertEqual(signal["history"][-1]["m20"], signal["ma20"])
 
     def test_flat_book_downtrend_stays_out(self):
         generated, signal = self.plan(self.falling, {})

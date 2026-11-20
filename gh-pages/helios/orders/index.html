@@ -5,130 +5,252 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NVDA Nightly Orders · Helios Tape</title>
   <style>
-    :root{color-scheme:dark;--bg:#08111a;--panel:#101f2a;--line:#25404a;--text:#e8f4f1;--muted:#93aaa9;--mint:#40e0bd;--amber:#f5ba5c}
+    :root{color-scheme:dark;--bg:#08111a;--panel:#101f2a;--line:#25404a;--text:#e8f4f1;--soft:#c7d8d5;--muted:#93aaa9;--mint:#40e0bd;--amber:#f5ba5c;--s1:#1f9e80;--s2:#c08030}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,sans-serif}
     a{color:var(--mint)}.wrap{max-width:1050px;margin:auto;padding:24px}.nav{display:flex;justify-content:space-between;gap:20px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:18px;flex-wrap:wrap}
     .brand{font-size:14px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}.navlinks{display:flex;gap:18px;flex-wrap:wrap;font-size:14px}
-    .hero{padding:58px 0 34px}.eyebrow{color:var(--mint);font-size:12px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}h1{font-size:clamp(38px,6vw,68px);line-height:1.05;letter-spacing:-.055em;margin:12px 0 20px}h2{font-size:23px;margin:0 0 12px}h3{font-size:17px;margin:0 0 8px}
-    .lead{max-width:720px;font-size:19px;color:#c7d8d5}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.card,.section{background:var(--panel);border:1px solid var(--line);border-radius:13px}.card{padding:18px}.label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}.value{font-size:28px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}.section{padding:26px;margin-top:18px}.section p{color:#c7d8d5;margin:8px 0 14px}.pill{display:inline-block;color:var(--mint);border:1px solid var(--mint);border-radius:99px;padding:3px 11px;font-size:12px;font-weight:700;letter-spacing:.08em}
-    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.step{border-top:2px solid var(--mint);padding-top:12px}.num{color:var(--amber);font-size:12px;font-weight:700;letter-spacing:.12em}pre{background:#07141b;border:1px solid var(--line);border-radius:9px;padding:18px;overflow:auto;color:#d9f1e9;font-size:13px;line-height:1.5}code{font-family:ui-monospace,SFMono-Regular,monospace}ul{padding-left:20px;color:#c7d8d5}li{margin:6px 0}.links{display:flex;flex-wrap:wrap;gap:16px;margin-top:18px;font-size:14px}.note{font-size:13px;color:var(--muted)}
-    .bt-legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:4px 0 8px}.bt-legend span{display:inline-flex;align-items:center;gap:7px}.bt-legend i{display:inline-block;width:22px;height:0;border-top:2px solid}
+    .hero{padding:48px 0 28px}.eyebrow{color:var(--mint);font-size:12px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}h1{font-size:clamp(38px,6vw,64px);line-height:1.05;letter-spacing:-.05em;margin:12px 0 16px}h2{font-size:23px;margin:0 0 6px}h3{font-size:16px;margin:0 0 6px}
+    .lead{max-width:680px;font-size:19px;color:var(--soft);margin:0 0 16px}.pill{display:inline-block;color:var(--mint);border:1px solid var(--mint);border-radius:99px;padding:3px 11px;font-size:12px;font-weight:700;letter-spacing:.08em}
+    .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.card,.section{background:var(--panel);border:1px solid var(--line);border-radius:13px}.card{padding:16px 18px}.label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}.value{font-size:26px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+    .section{padding:24px 26px;margin-top:18px}.sub{color:var(--muted);font-size:14px;margin:0 0 14px}.section p{color:var(--soft)}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}.two h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+    pre{background:#07141b;border:1px solid var(--line);border-radius:9px;padding:14px 16px;overflow:auto;color:#d9f1e9;font-size:12.5px;line-height:1.45;margin:0}code{font-family:ui-monospace,SFMono-Regular,monospace}
+    .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:0 0 6px}.legend span{display:inline-flex;align-items:center;gap:7px}.legend i{display:inline-block;width:22px;height:0;border-top:2px solid}.legend b{display:inline-block;width:14px;height:12px;border-radius:3px;background:rgba(64,224,189,.14);border:1px solid rgba(64,224,189,.35)}
     .chart{position:relative}.chart svg{display:block;width:100%;height:auto;touch-action:pan-y}.chart text{font:12px system-ui,-apple-system,sans-serif;fill:var(--muted)}
-    .tip{position:absolute;pointer-events:none;background:#07141b;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.5;white-space:nowrap;opacity:0;transition:opacity .1s}.tip b{color:var(--text);font-weight:600}
-    table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}th,td{text-align:right;padding:8px 10px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
-    .tablewrap{overflow-x:auto;margin:14px 0}table.left th,table.left td{text-align:left}details summary{cursor:pointer;color:var(--mint);font-size:14px;margin-top:8px}
-    @media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:1fr}.wrap{padding:16px}.hero{padding-top:36px}}
+    .tip{position:absolute;pointer-events:none;background:#07141b;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.5;white-space:nowrap;opacity:0;transition:opacity .1s;z-index:2}.tip b{color:var(--text);font-weight:600}
+    .scrollx{overflow-x:auto}.scrollx svg{display:block;min-width:620px;width:100%;height:auto}
+    .diagram text{font:13px system-ui,-apple-system,sans-serif;fill:var(--soft)}.diagram .t{font-weight:700;fill:var(--text);font-size:15px}.diagram .m{fill:var(--muted);font-size:12px}.diagram code,.diagram .c{font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px}
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px}.kpi .label{font-size:11px}.kpi .vs{display:flex;gap:12px;align-items:baseline;margin-top:2px;font-variant-numeric:tabular-nums}.kpi .a{font-size:20px;font-weight:700;color:var(--text)}.kpi .b{font-size:13px;color:var(--muted)}
+    .takeaways{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}.take{border-left:3px solid var(--line);padding:2px 0 2px 12px;font-size:14px;color:var(--soft)}.take strong{display:block;color:var(--text);font-size:15px}
+    table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}th,td{text-align:right;padding:7px 10px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+    details summary{cursor:pointer;color:var(--mint);font-size:14px;margin-top:12px}
+    .notes{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 24px;margin:6px 0 0;padding:0;list-style:none}.notes li{font-size:14px;color:var(--soft);padding-left:14px;border-left:2px solid var(--line)}.notes strong{color:var(--text)}
+    .links{display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;font-size:14px}.note{font-size:13px;color:var(--muted)}
+    @media(max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}.two,.takeaways,.notes{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.wrap{padding:16px}.hero{padding-top:32px}.section{padding:20px 16px}}
   </style>
 </head>
 <body>
   <div class="wrap">
     <nav class="nav"><div class="brand">Helios Tape / Orders</div><div class="navlinks"><a href="../">Blotter</a><a href="../wheel/">Wheel</a><a href="https://github.com/Jessie-BP/fintech-535">Source</a></div></nav>
-    <header class="hero"><div class="eyebrow">FinTech 535 · Automated order generation</div><h1>A wheel that<br>checks the trend.</h1><p class="lead">Every night a GitHub Action reads NVDA closing prices from LSEG and Sanji's position book, then writes the next step of an options wheel as Sanji orders: sell a put, sell a covered call, sell the shares, or wait. A 20/50-day moving average decides whether the wheel turns at all.</p><span class="pill" id="status">Loading latest signal</span></header>
+
+    <header class="hero"><div class="eyebrow">FinTech 535 · Nightly Sanji orders</div><h1>A wheel that<br>checks the trend.</h1>
+      <p class="lead">An NVDA options wheel that only sells options while the 20-day average is above the 50-day. A GitHub Action rebuilds the order file every night.</p><span class="pill" id="status">Loading latest signal</span></header>
+
     <div class="grid">
       <div class="card"><div class="label">Last close</div><div class="value" id="close">—</div></div>
       <div class="card"><div class="label">20-day mean</div><div class="value" id="ma20">—</div></div>
       <div class="card"><div class="label">50-day mean</div><div class="value" id="ma50">—</div></div>
       <div class="card"><div class="label">Trend</div><div class="value" id="trend">—</div></div>
-      <div class="card"><div class="label">Next session</div><div class="value" id="session" style="font-size:21px">—</div></div>
+      <div class="card"><div class="label">Orders for</div><div class="value" id="session" style="font-size:20px">—</div></div>
     </div>
-    <section class="section"><h2>Latest open orders</h2><p id="summary">Reading the published signal…</p><pre id="orders">[]</pre><p id="example-intro" class="note" hidden>No order tonight. When the 20-day mean is back above the 50-day mean and the book is flat, the script writes this order instead: sell one put, one listed strike out of the money at the open, on the expiry nearest five days out (the same order the unit tests check):</p><pre id="example" hidden></pre><p class="note">This page displays the generated order file. It does not place trades. Sanji's order resolver is described in the course specification and is not active yet.</p></section>
-    <section class="section"><h2>How the algorithm works</h2><div class="steps"><div class="step"><div class="num">01 / INPUT</div><h3>Known closes and the book</h3><p>Pull roughly 150 calendar days of NVDA daily <code>TRDPRC_1</code> from LSEG. Require 50 valid closes, and require the newest one to be the last NASDAQ session that has closed. Read <code>mkt/positions.json</code> for NVDA shares, short puts, short calls and cash. No file means a flat book.</p></div><div class="step"><div class="num">02 / FILTER</div><h3>Is the trend up?</h3><p>The trend is up when the mean of the last 20 closes is above the mean of the last 50. Ties count as down. The filter only says whether to keep selling options; it never picks a strike.</p></div><div class="step"><div class="num">03 / ORDERS</div><h3>Take the next wheel step</h3><p>One market order at the next open, chosen from the table below. Strikes and expiries are Sanji tokens resolved at the open, not numbers fixed tonight.</p></div></div>
-      <div class="tablewrap"><table class="left" aria-label="Wheel steps"><thead><tr><th>Book</th><th>Trend up</th><th>Trend down</th></tr></thead><tbody>
-        <tr><td>Flat</td><td><code>SHT</code> 1 put, <code>5DTE+</code>, <code>otm:1</code> (cash-secured put)</td><td>Nothing</td></tr>
-        <tr><td>Long 100 shares (put was assigned)</td><td><code>SHT</code> 1 call, <code>5DTE+</code>, <code>otm:1</code> (covered call)</td><td><code>SEL</code> the shares</td></tr>
-        <tr><td>Short put or short call open</td><td>Nothing; wait for expiry or assignment</td><td>Nothing; wait</td></tr>
-      </tbody></table></div>
-      <p class="note">Assignment is not an order. Sanji applies it after the close: a short put that finishes in the money turns into 100 long shares, and a covered call that finishes in the money takes the shares away. The next night the script reads that book and picks the next row. Shares that are not a multiple of 100 are sold first, because a call covers 100. If the book reports cash below 100 times the last close, the put is skipped; Sanji itself does not check buying power.</p>
+
+    <!-- 1. The signal -->
+    <section class="section"><h2>The signal</h2><p class="sub">Shaded days: 20-day mean above 50-day mean, so the wheel may sell options. Last 250 sessions.</p>
+      <div class="legend" aria-hidden="true"><span><i style="border-color:var(--soft);border-top-width:1.5px"></i>NVDA close</span><span><i style="border-color:var(--s1)"></i>20-day mean</span><span><i style="border-color:var(--s2);border-top-style:dashed"></i>50-day mean</span><span><b></b>Trend up</span></div>
+      <div class="chart" id="sig-chart"><div class="tip" id="sig-tip"></div></div>
     </section>
-    <section class="section" id="backtest"><h2>Backtest</h2><p>This tests the trend filter, not the option income. It holds NVDA stock while the filter says the trend is up and holds cash otherwise, using LSEG daily bars since late 2020. A wheel earns premium on top of that and gives up gains above the call strike, which needs historical option prices and is not modeled here. The backtest calls the exact filter the nightly job uses (<code>signal_from_closes</code>), decides at each close, and fills at the next day's open, the way a Sanji market order would. Returns are split at the open, so the overnight gap belongs to the old position and the day's move to the new one. No commissions or slippage. Prices are split-adjusted. Growth of $1, log scale:</p>
-      <div class="bt-legend" aria-hidden="true"><span><i style="border-color:#1f9e80"></i>Trend filter on the stock</span><span><i style="border-color:#c08030;border-top-style:dashed"></i>Buy and hold NVDA</span></div>
+
+    <!-- 2. The wheel -->
+    <section class="section"><h2>The wheel</h2><p class="sub">Each night the script reads the book, finds the current box, and writes the order on the solid arrow leaving it. Dashed arrows are things Sanji does after the close.</p>
+      <div class="scrollx diagram"><svg viewBox="0 0 760 400" role="img" aria-label="Wheel state diagram: flat, short put, long 100 shares, short call">
+        <defs>
+          <marker id="am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#40e0bd"/></marker>
+          <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#93aaa9"/></marker>
+        </defs>
+        <!-- our orders: solid mint -->
+        <line x1="222" y1="60" x2="536" y2="60" stroke="#40e0bd" stroke-width="2" marker-end="url(#am)"/>
+        <text x="379" y="50" text-anchor="middle">Trend up → <tspan class="c" fill="#40e0bd">SHT put 5DTE+ otm:1</tspan></text>
+        <line x1="536" y1="320" x2="222" y2="320" stroke="#40e0bd" stroke-width="2" marker-end="url(#am)"/>
+        <text x="379" y="310" text-anchor="middle">Trend up → <tspan class="c" fill="#40e0bd">SHT call 5DTE+ otm:1</tspan></text>
+        <line x1="548" y1="292" x2="214" y2="110" stroke="#40e0bd" stroke-width="2" marker-end="url(#am)"/>
+        <rect x="300" y="186" width="160" height="24" rx="5" fill="#101f2a"/>
+        <text x="380" y="203" text-anchor="middle">Trend down → <tspan class="c" fill="#40e0bd">SEL</tspan></text>
+        <!-- Sanji events: dashed grey -->
+        <line x1="536" y1="86" x2="222" y2="86" stroke="#93aaa9" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ag)"/>
+        <text x="379" y="104" text-anchor="middle" class="m">expires worthless: keep premium</text>
+        <line x1="630" y1="106" x2="630" y2="290" stroke="#93aaa9" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ag)"/>
+        <text x="620" y="236" text-anchor="end" class="m">assigned:</text><text x="620" y="252" text-anchor="end" class="m">buy 100 at strike</text>
+        <line x1="222" y1="346" x2="536" y2="346" stroke="#93aaa9" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ag)"/>
+        <text x="379" y="364" text-anchor="middle" class="m">expires worthless: keep shares + premium</text>
+        <line x1="130" y1="294" x2="130" y2="110" stroke="#93aaa9" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ag)"/>
+        <text x="140" y="164" class="m">called away:</text><text x="140" y="180" class="m">sell 100 at strike</text>
+        <!-- states -->
+        <g id="st-flat"><rect x="40" y="40" width="180" height="66" rx="10" fill="#0c1923" stroke="#25404a" stroke-width="1.5"/><text x="130" y="68" text-anchor="middle" class="t">Flat</text><text x="130" y="88" text-anchor="middle" class="m">cash only</text></g>
+        <text x="130" y="28" text-anchor="middle" class="m">trend down: wait</text>
+        <g id="st-sp"><rect x="540" y="40" width="180" height="66" rx="10" fill="#0c1923" stroke="#25404a" stroke-width="1.5"/><text x="630" y="68" text-anchor="middle" class="t">Short put</text><text x="630" y="88" text-anchor="middle" class="m">wait for expiry</text></g>
+        <g id="st-long"><rect x="540" y="294" width="180" height="66" rx="10" fill="#0c1923" stroke="#25404a" stroke-width="1.5"/><text x="630" y="322" text-anchor="middle" class="t">Long 100 shares</text><text x="630" y="342" text-anchor="middle" class="m">from assignment</text></g>
+        <g id="st-sc"><rect x="40" y="294" width="180" height="66" rx="10" fill="#0c1923" stroke="#25404a" stroke-width="1.5"/><text x="130" y="322" text-anchor="middle" class="t">Short call</text><text x="130" y="342" text-anchor="middle" class="m">covered, wait</text></g>
+        <g id="here" opacity="0"><rect id="here-box" x="0" y="0" width="64" height="20" rx="10" fill="#40e0bd"/><text id="here-txt" x="32" y="14" text-anchor="middle" style="fill:#08111a;font-weight:700;font-size:11px">NOW</text></g>
+      </svg></div>
+    </section>
+
+    <!-- 3. Tonight's orders -->
+    <section class="section"><h2>Tonight's order file</h2><p class="sub" id="summary">Reading the published signal…</p>
+      <div class="two"><div><h3><code>open_orders.json</code></h3><pre id="orders">[]</pre></div>
+        <div id="example-wrap" hidden><h3>When the trend turns up</h3><pre id="example"></pre></div></div>
+      <p class="note">The page shows the file; it places no trades. Sanji resolves the tokens at the open. He is not live yet.</p>
+    </section>
+
+    <!-- 4. One night -->
+    <section class="section"><h2>One night</h2><p class="sub">Scheduled for 10 p.m.; GitHub has been starting it around 6 a.m. Both plan the same session, because the script picks sessions by the exchange clock, not the date.</p>
+      <div class="scrollx diagram"><svg viewBox="0 0 760 120" role="img" aria-label="Timeline from close to the next close">
+        <line x1="100" y1="46" x2="660" y2="46" stroke="#25404a" stroke-width="2"/>
+        <g text-anchor="middle">
+          <circle cx="100" cy="46" r="7" fill="#25404a"/><text x="100" y="24" class="m">4:00 pm</text><text x="100" y="76" class="t" style="font-size:13px">Close, day T</text><text x="100" y="94" class="m">last bar the script uses</text>
+          <circle cx="240" cy="46" r="7" fill="#0c1923" stroke="#93aaa9" stroke-width="2" stroke-dasharray="3 2"/><text x="240" y="24" class="m">10:00 pm</text><text x="240" y="76" class="t" style="font-size:13px">Scheduled</text><text x="240" y="94" class="m">cron 03:00 UTC</text>
+          <circle cx="380" cy="46" r="8" fill="#40e0bd"/><text x="380" y="24" class="m">~6:00 am</text><text x="380" y="76" class="t" style="font-size:13px">Action runs</text><text x="380" y="94" class="m">writes + deploys</text>
+          <circle cx="520" cy="46" r="7" fill="#f5ba5c"/><text x="520" y="24" class="m">9:30 am</text><text x="520" y="76" class="t" style="font-size:13px">Open, day T+1</text><text x="520" y="94" class="m">order fills here</text>
+          <circle cx="660" cy="46" r="7" fill="#25404a"/><text x="660" y="24" class="m">4:00 pm</text><text x="660" y="76" class="t" style="font-size:13px">Sanji settles</text><text x="660" y="94" class="m">fills, assignment</text>
+        </g>
+      </svg></div>
+    </section>
+
+    <!-- 5. Backtest -->
+    <section class="section" id="backtest"><h2>Does the filter help?</h2><p class="sub">Backtest of the filter on NVDA stock: hold shares when the trend is up, cash when down, fill at the next open. Option premium is not modeled.</p>
+      <div class="legend" aria-hidden="true"><span><i style="border-color:var(--s1)"></i>Trend filter</span><span><i style="border-color:var(--s2);border-top-style:dashed"></i>Buy and hold</span></div>
       <div class="chart" id="bt-chart"><div class="tip" id="bt-tip"></div></div>
-      <div class="tablewrap"><table id="bt-table" aria-label="Backtest statistics"><thead><tr><th>Metric</th><th>Trend filter</th><th>Buy and hold</th></tr></thead><tbody></tbody></table></div>
-      <p class="note" id="bt-span"></p>
-      <h3>What it shows</h3>
-      <p>As of the 2026-11-19 run, the rule turned $1 into about $3.89; holding NVDA turned it into about $10.75. The rule was in the market 64% of days and ran at lower volatility (38% vs 51%), but its Sharpe ratio was lower (0.80 vs 1.06). On a stock that rose tenfold, being out a third of the time is expensive: in 2023 the rule made +150% while holding made +246%.</p>
-      <p>It also did not deliver the protection a trend filter promises. It exited in January 2022, about 17% below the November 2021 peak, but then bought two bear-market rallies, in March and August 2022, and sold each about 30% lower. It lost 59% in 2022 against 51% for holding, and its worst drawdown (−65%) was almost the same as holding's (−66%). Where it helped is the recent decline: down 8% in 2026 against 23% for holding, and flat since the exit on 2026-11-02, which is why tonight's order file is empty.</p>
-      <p>Limits: one stock, one path, and NVDA was picked after it had already risen, which flatters any long rule. Seventeen round trips over six years make costs negligible, so they are left out. Read it as evidence about when the filter keeps the wheel running, not as the wheel's return.</p>
-      <details><summary>All trades</summary><div class="tablewrap"><table id="bt-trades"><thead><tr><th>Entry (open)</th><th>Price</th><th>Exit (open)</th><th>Price</th><th>Return</th></tr></thead><tbody></tbody></table></div></details>
-      <div class="links"><a href="https://github.com/Jessie-BP/fintech-535/blob/main/scripts/nvda_ma_backtest.py">Backtest script ↗</a><a href="backtest.json">backtest.json ↗</a></div>
+      <div class="kpis" id="bt-kpis"></div>
+      <h3 style="margin-top:18px">Return by year</h3>
+      <div class="legend" aria-hidden="true"><span><b style="background:var(--s1);border:0"></b>Trend filter</span><span><b style="background:var(--s2);border:0"></b>Buy and hold</span></div>
+      <div class="chart" id="yr-chart"><div class="tip" id="yr-tip"></div></div>
+      <div class="takeaways">
+        <div class="take" style="border-color:var(--s2)"><strong>Lags in rallies</strong>Out of the market a third of the time. 2023: +150% vs +246%.</div>
+        <div class="take" style="border-color:var(--s2)"><strong>Whipsawed in 2022</strong>Bought two bear-market rallies, sold each ~30% lower. −59% vs −51%.</div>
+        <div class="take" style="border-color:var(--s1)"><strong>Helped in 2026</strong>Out since 2026-11-02. −8% vs −23% this year.</div>
+      </div>
+      <details><summary>All trades and full numbers</summary>
+        <div class="scrollx" style="margin-top:10px"><table id="bt-table"><thead><tr><th>Metric</th><th>Trend filter</th><th>Buy and hold</th></tr></thead><tbody></tbody></table></div>
+        <div class="scrollx" style="margin-top:14px"><table id="bt-trades"><thead><tr><th>Entry (open)</th><th>Price</th><th>Exit (open)</th><th>Price</th><th>Return</th></tr></thead><tbody></tbody></table></div>
+        <p class="note" id="bt-span"></p>
+        <p class="note">One stock, one path, and NVDA was chosen after its rise, which flatters any long rule. 17 round trips in six years, so costs are left out.</p>
+      </details>
     </section>
-    <section class="section"><h2>When it runs</h2><p>The workflow is scheduled for <code>03:00 UTC</code>, which is 10 p.m. New York in winter and 11 p.m. in summer, following the course's nightly refresh. GitHub starts scheduled jobs late when its runners are busy. On this repo the scheduled run has actually started around <code>11:00 UTC</code>, about 6 a.m. New York, which is still before the 9:30 open.</p><p>The script therefore does not trust the calendar date. It asks the NASDAQ calendar for two sessions measured against the current time: the last session that has already <em>closed</em>, whose close must be the newest LSEG bar, and the first session that has not yet <em>opened</em>, which becomes the order's <code>for</code> date. An on-time run at 10 p.m. Monday and a late run at 6 a.m. Tuesday both plan Tuesday from Monday's close. A manual run during market hours ignores the partial bar and plans the following session. If the newest close is missing, the job fails instead of writing orders from stale data.</p><p>After the script writes the files, the workflow commits them and starts the Pages deployment, so this page shows the same orders as the repo.</p></section>
-    <section class="section"><h2>Why this design</h2><p>A plain wheel sells puts in every market. In a falling market that means getting assigned shares on the way down and then writing calls below the cost basis. The moving-average filter stops new puts and exits shares while the trend is down; the backtest above shows when it would have stood aside. The wheel itself is the strategy I backtested on AAPL earlier this semester, and it is what Sanji's assignment rules were written for.</p><p>Every option order is a market order with relative tokens. <code>otm:1</code> and <code>5DTE+</code> need only the listed strikes and expiries. Tokens such as <code>delta:30</code> and limit prices like <code>mid</code> need a chain snapshot at the open, which Robin does not have yet, so Sanji would reject or leave them unresolved. The cost of a market order is selling at the bid instead of the mid.</p><p>Sanji has not published the shape of <code>positions.json</code>. The parser accepts the common shapes (a list of positions, a map keyed by conid, negative quantities or a <code>side</code> field for shorts) and stops the job on anything it cannot read, rather than guessing.</p><p>The order <code>id</code> contains the session date and the wheel step, so a repeated nightly run for the same session produces the same identifier. Orders use NVDA's IB conid <code>4815747</code> and only fields from the <a href="https://jakevestal.github.io/server-logic-533/order.html">Sanji specification</a>. A data fetch or calendar validation failure stops the job before either order file is overwritten.</p><p>The root <code>open_orders.json</code> satisfies the assignment's requested location. An identical <code>mkt/open_orders.json</code> supports the path in Sanji's published schema. The workflow commits both files and this page's signal data, then triggers Pages deployment.</p><p>Sanji fills orders from the prices the course machine stores, and it stores only the stocks listed in the repo's <code>price_history.json</code>. NVDA (conid <code>4815747</code>) is listed there with <code>"tracked": true</code>, so the nightly price job collects its bars alongside the strategy's own LSEG pull.</p><div class="links"><a href="https://github.com/Jessie-BP/fintech-535/blob/main/.github/workflows/nvda-orders.yml">Nightly Action ↗</a><a href="https://github.com/Jessie-BP/fintech-535/blob/main/scripts/nvda_orders.py">Python strategy ↗</a><a href="https://github.com/Jessie-BP/fintech-535/blob/main/open_orders.json">Root orders ↗</a><a href="https://github.com/Jessie-BP/fintech-535/actions/workflows/nvda-orders.yml">Run history ↗</a><a href="https://github.com/Jessie-BP/fintech-535/blob/main/price_history.json">price_history.json ↗</a><a href="https://www.interactivebrokers.com/campus/ibkr-api-page/contracts/">IBKR contract IDs ↗</a></div></section>
+
+    <!-- 6. Design notes -->
+    <section class="section"><h2>Design notes</h2>
+      <ul class="notes">
+        <li><strong>Why a filter on the wheel.</strong> A plain wheel keeps selling puts into a falling market and ends up writing calls below cost. The filter stops new puts and sells shares while the trend is down.</li>
+        <li><strong>Only resolvable tokens.</strong> <code>otm:1</code> and <code>5DTE+</code> need only listed strikes. <code>delta:30</code> and <code>mid</code> need a chain snapshot Robin does not have yet.</li>
+        <li><strong>Fail loudly.</strong> Stale LSEG data or an unreadable <code>positions.json</code> stops the job before any order file is written.</li>
+        <li><strong>Idempotent ids.</strong> <code>nvda-csp-2026-11-23</code>: step plus session date, so a rerun cannot fill twice.</li>
+        <li><strong>Both paths.</strong> Same file at <code>open_orders.json</code> (assignment) and <code>mkt/open_orders.json</code> (Sanji spec).</li>
+        <li><strong>Prices on Luffy.</strong> NVDA (conid <code>4815747</code>) is tracked in <code>price_history.json</code> so Sanji has bars to fill against.</li>
+      </ul>
+      <div class="links"><a href="https://github.com/Jessie-BP/fintech-535/blob/main/scripts/nvda_orders.py">Strategy code ↗</a><a href="https://github.com/Jessie-BP/fintech-535/blob/main/.github/workflows/nvda-orders.yml">Nightly Action ↗</a><a href="https://github.com/Jessie-BP/fintech-535/actions/workflows/nvda-orders.yml">Run history ↗</a><a href="https://github.com/Jessie-BP/fintech-535/blob/main/open_orders.json">open_orders.json ↗</a><a href="https://github.com/Jessie-BP/fintech-535/blob/main/scripts/nvda_ma_backtest.py">Backtest code ↗</a><a href="https://jakevestal.github.io/server-logic-533/order.html">Sanji spec ↗</a></div>
+    </section>
   </div>
-  <script>
-    const set=(id,v)=>document.getElementById(id).textContent=v;
-    fetch('signal.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(d=>{
-      set('status',d.status || ('LSEG close '+d.as_of));
-      if(d.close!=null)set('close','$'+Number(d.close).toFixed(2));
-      if(d.ma20!=null)set('ma20','$'+Number(d.ma20).toFixed(2));
-      if(d.ma50!=null)set('ma50','$'+Number(d.ma50).toFixed(2));
-      if(d.for)set('session',d.for);
-      if(d.trend)set('trend',d.trend==='up'?'Up':'Down');
-      const orders=Array.isArray(d.orders)?d.orders:[];
-      set('orders',JSON.stringify(orders,null,2));
-      const b=d.book||{};
-      if(!orders.length && d.for && d.book && !b.shares && !b.short_puts && !b.short_calls){
-        const ex={id:`nvda-csp-${d.for}`,for:d.for,order_type:'mkt',action:'SHT',qty:1,underlying:4815747,contract:'put',expiry:'5DTE+',strike:'otm:1',ref:'open'};
-        set('example',JSON.stringify([ex],null,2));
-        document.getElementById('example-intro').hidden=false;
-        document.getElementById('example').hidden=false;
-      }
-      set('summary',d.status || (d.reason ? `${orders.length} order(s) for ${d.for}. ${d.reason} Book: ${b.shares||0} shares, ${b.short_puts||0} short put(s), ${b.short_calls||0} short call(s).` : `Orders for ${d.for}. Waiting for the first nightly run of the wheel version.`));
-    }).catch(e=>{set('status','Signal unavailable');set('summary','Could not load signal.json: '+e.message)});
-  </script>
+
   <script>
   (function(){
-    const S='#1f9e80',H='#c08030',GRID='#25404a';
-    const pct=(x,d=1)=>(x>=0?'+':'')+(x*100).toFixed(d)+'%';
-    const money=x=>'$'+x.toFixed(2);
-    const box=document.getElementById('bt-chart'),tip=document.getElementById('bt-tip');
-    let data=null;
-    function draw(){
-      if(!data)return;
-      const W=Math.max(300,box.clientWidth),Hh=Math.round(Math.min(360,Math.max(240,W*0.42)));
-      const m={l:46,r:W<520?12:96,t:10,b:40},band=8;
-      const pw=W-m.l-m.r,ph=Hh-m.t-m.b-band-10;
-      const s=data.series,n=s.length;
-      const lo=Math.min(...s.map(p=>Math.min(p.s,p.h))),hi=Math.max(...s.map(p=>Math.max(p.s,p.h)));
-      const ly=Math.log(lo*0.9),hy=Math.log(hi*1.1);
-      const t0=Date.parse(s[0].d),t1=Date.parse(s[n-1].d);
-      const X=d=>m.l+(Date.parse(d)-t0)/(t1-t0)*pw, Y=v=>m.t+(hy-Math.log(v))/(hy-ly)*ph;
-      let g='';
-      [0.5,1,2,5,10,20].filter(v=>v>=lo*0.9&&v<=hi*1.1).forEach(v=>{g+=`<line x1="${m.l}" x2="${m.l+pw}" y1="${Y(v)}" y2="${Y(v)}" stroke="${GRID}" stroke-width="1"/><text x="${m.l-8}" y="${Y(v)+4}" text-anchor="end">$${v}</text>`});
-      for(let y=new Date(s[0].d).getUTCFullYear()+1;y<=new Date(s[n-1].d).getUTCFullYear();y++){const x=X(y+'-01-01');g+=`<line x1="${x}" x2="${x}" y1="${m.t+ph}" y2="${m.t+ph+4}" stroke="${GRID}"/><text x="${x}" y="${Hh-8}" text-anchor="middle">${y}</text>`}
-      const path=k=>'M'+s.map(p=>X(p.d).toFixed(1)+','+Y(p[k]).toFixed(1)).join('L');
-      // in-market strip: strategy curve moves only while holding
-      const by=m.t+ph+10;let strip='';
-      data.trades.forEach(tr=>{const a=X(tr.entry),b=X(tr.exit||s[n-1].d);strip+=`<rect x="${a}" y="${by}" width="${Math.max(2,b-a)}" height="${band}" rx="2" fill="${S}"/>`});
-      const last=s[n-1];
-      let labels='';
-      if(W>=520){const ys=Y(last.s),yh=Y(last.h),gap=Math.abs(ys-yh)<16?(ys<yh?-8:8):0;
-        labels=`<text x="${m.l+pw+8}" y="${ys+4-gap}" style="fill:var(--text)">Filter ${money(last.s)}</text><text x="${m.l+pw+8}" y="${yh+4+gap}" style="fill:var(--text)">Hold ${money(last.h)}</text>`}
-      box.querySelector('svg')?.remove();
-      box.insertAdjacentHTML('afterbegin',`<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Growth of one dollar: trend filter ${money(last.s)}, buy and hold ${money(last.h)}">${g}
-        <path d="${path('h')}" fill="none" stroke="${H}" stroke-width="2" stroke-dasharray="6 4" stroke-linejoin="round"/>
-        <path d="${path('s')}" fill="none" stroke="${S}" stroke-width="2" stroke-linejoin="round"/>
-        ${strip}<text x="${m.l}" y="${by-3}" font-size="11">In market</text>${labels}
-        <line id="bt-x" y1="${m.t}" y2="${m.t+ph}" stroke="var(--muted)" stroke-width="1" opacity="0"/>
-        <circle id="bt-ds" r="4" fill="${S}" stroke="#101f2a" stroke-width="2" opacity="0"/><circle id="bt-dh" r="4" fill="${H}" stroke="#101f2a" stroke-width="2" opacity="0"/>
-        <rect x="${m.l}" y="0" width="${pw}" height="${Hh}" fill="transparent" id="bt-hit"/></svg>`);
-      const svg=box.querySelector('svg'),hit=svg.querySelector('#bt-hit'),xl=svg.querySelector('#bt-x'),ds=svg.querySelector('#bt-ds'),dh=svg.querySelector('#bt-dh');
-      const show=e=>{const r=svg.getBoundingClientRect(),px=(e.clientX-r.left)*W/r.width;
-        const tt=t0+(px-m.l)/pw*(t1-t0);let i=0,best=1e18;for(let k=0;k<n;k++){const dd=Math.abs(Date.parse(s[k].d)-tt);if(dd<best){best=dd;i=k}}
-        const p=s[i],x=X(p.d);[xl,ds,dh].forEach(el=>el.setAttribute('opacity',1));xl.setAttribute('x1',x);xl.setAttribute('x2',x);
-        ds.setAttribute('cx',x);ds.setAttribute('cy',Y(p.s));dh.setAttribute('cx',x);dh.setAttribute('cy',Y(p.h));
-        tip.innerHTML=`${p.d}<br><span style="color:${S}">━</span> Filter <b>${money(p.s)}</b><br><span style="color:${H}">┅</span> Hold <b>${money(p.h)}</b>`;
-        tip.style.opacity=1;const sx=x*r.width/W;tip.style.left=Math.min(Math.max(0,sx+12),r.width-tip.offsetWidth)+'px';tip.style.top='8px'};
-      const hide=()=>{[xl,ds,dh].forEach(el=>el.setAttribute('opacity',0));tip.style.opacity=0};
+    const S1='#1f9e80',S2='#c08030',CL='#c7d8d5',GRID='#25404a',BAND='rgba(64,224,189,.12)';
+    const $=id=>document.getElementById(id),set=(id,v)=>{$(id).textContent=v};
+    const money=x=>'$'+Number(x).toFixed(2),pct=(x,d=1)=>(x>=0?'+':'−')+Math.abs(x*100).toFixed(d)+'%';
+    const yearTicks=(d0,d1,X,y,H,g)=>{for(let yr=new Date(d0).getUTCFullYear()+1;yr<=new Date(d1).getUTCFullYear();yr++){const x=X(yr+'-01-01');g.push(`<line x1="${x}" x2="${x}" y1="${y}" y2="${y+4}" stroke="${GRID}"/><text x="${x}" y="${H-8}" text-anchor="middle">${yr}</text>`)}};
+    function crosshair(svg,W,m,pw,n,xAt,onPick,tip){
+      const hit=svg.querySelector('.hit');
+      const show=e=>{const r=svg.getBoundingClientRect(),px=(e.clientX-r.left)*W/r.width;let i=0,best=1e9;for(let k=0;k<n;k++){const dd=Math.abs(xAt(k)-px);if(dd<best){best=dd;i=k}}
+        const x=onPick(i);tip.style.opacity=1;const sx=x*r.width/W;tip.style.left=Math.min(Math.max(0,sx+12),r.width-tip.offsetWidth)+'px';tip.style.top='6px'};
+      const hide=()=>{svg.querySelectorAll('.hv').forEach(el=>el.setAttribute('opacity',0));tip.style.opacity=0};
       hit.addEventListener('pointermove',show);hit.addEventListener('pointerdown',show);hit.addEventListener('pointerleave',hide);
     }
+
+    /* ---------- signal chart ---------- */
+    const sigBox=$('sig-chart'),sigTip=$('sig-tip');let sig=null;
+    function drawSignal(){
+      const h=sig&&sig.history;if(!h||!h.length){sigBox.innerHTML='<p class="note">Price history appears after the next nightly run.</p>';return}
+      const W=Math.max(300,sigBox.clientWidth),H=Math.round(Math.min(340,Math.max(220,W*0.36))),m={l:48,r:W<560?10:104,t:10,b:30},pw=W-m.l-m.r,ph=H-m.t-m.b,n=h.length;
+      const vals=h.flatMap(p=>[p.c,p.m20,p.m50]),lo=Math.min(...vals)*0.97,hi=Math.max(...vals)*1.03;
+      const X=i=>m.l+i/(n-1)*pw,Y=v=>m.t+(hi-v)/(hi-lo)*ph,g=[];
+      // trend-up bands
+      let st=null;for(let i=0;i<=n;i++){const up=i<n&&h[i].m20>h[i].m50;if(up&&st===null)st=i;if(!up&&st!==null){g.push(`<rect x="${X(st)}" y="${m.t}" width="${Math.max(1,X(i-1)-X(st))}" height="${ph}" fill="${BAND}"/>`);st=null}}
+      const step=hi-lo>200?50:hi-lo>80?25:10;for(let v=Math.ceil(lo/step)*step;v<=hi;v+=step)g.push(`<line x1="${m.l}" x2="${m.l+pw}" y1="${Y(v)}" y2="${Y(v)}" stroke="${GRID}"/><text x="${m.l-8}" y="${Y(v)+4}" text-anchor="end">$${v}</text>`);
+      let lastMonth='';h.forEach((p,i)=>{const mo=p.d.slice(0,7);if(mo!==lastMonth&&i>0&&(p.d.slice(5,7)==='01'||p.d.slice(5,7)==='07')){g.push(`<text x="${X(i)}" y="${H-8}" text-anchor="middle">${p.d.slice(5,7)==='01'?p.d.slice(0,4):'Jul'}</text>`)}lastMonth=mo});
+      const path=k=>'M'+h.map((p,i)=>X(i).toFixed(1)+','+Y(p[k]).toFixed(1)).join('L');
+      const L=h[n-1];let lab='';
+      if(W>=560){const ys=[[Y(L.c),'Close '+money(L.c)],[Y(L.m20),'20d '+money(L.m20)],[Y(L.m50),'50d '+money(L.m50)]].sort((a,b)=>a[0]-b[0]);for(let k=1;k<3;k++)if(ys[k][0]-ys[k-1][0]<15)ys[k][0]=ys[k-1][0]+15;lab=ys.map(([y,t])=>`<text x="${m.l+pw+8}" y="${y+4}" style="fill:var(--text)">${t}</text>`).join('')}
+      sigBox.querySelector('svg')?.remove();
+      sigBox.insertAdjacentHTML('afterbegin',`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="NVDA close with 20 and 50 day means; trend ${sig.trend}">${g.join('')}
+        <path d="${path('c')}" fill="none" stroke="${CL}" stroke-width="1.5" stroke-linejoin="round" opacity=".8"/>
+        <path d="${path('m50')}" fill="none" stroke="${S2}" stroke-width="2" stroke-dasharray="6 4"/>
+        <path d="${path('m20')}" fill="none" stroke="${S1}" stroke-width="2"/>${lab}
+        <line class="hv vx" y1="${m.t}" y2="${m.t+ph}" stroke="var(--muted)" opacity="0"/>
+        <circle class="hv d1" r="4" fill="${S1}" stroke="#101f2a" stroke-width="2" opacity="0"/><circle class="hv d2" r="4" fill="${S2}" stroke="#101f2a" stroke-width="2" opacity="0"/><circle class="hv d0" r="4" fill="${CL}" stroke="#101f2a" stroke-width="2" opacity="0"/>
+        <rect class="hit" x="${m.l}" y="0" width="${pw}" height="${H}" fill="transparent"/></svg>`);
+      const svg=sigBox.querySelector('svg');
+      crosshair(svg,W,m,pw,n,X,i=>{const p=h[i],x=X(i);svg.querySelectorAll('.hv').forEach(el=>el.setAttribute('opacity',1));const vx=svg.querySelector('.vx');vx.setAttribute('x1',x);vx.setAttribute('x2',x);
+        [['.d0','c'],['.d1','m20'],['.d2','m50']].forEach(([c,k])=>{const el=svg.querySelector(c);el.setAttribute('cx',x);el.setAttribute('cy',Y(p[k]))});
+        sigTip.innerHTML=`${p.d} · trend <b>${p.m20>p.m50?'up':'down'}</b><br>Close <b>${money(p.c)}</b><br><span style="color:${S1}">━</span> 20d <b>${money(p.m20)}</b><br><span style="color:${S2}">┅</span> 50d <b>${money(p.m50)}</b>`;return x},sigTip);
+    }
+
+    /* ---------- wheel highlight ---------- */
+    function markState(b){
+      const id=b.short_puts?'st-sp':b.short_calls?'st-sc':b.shares>=100?'st-long':'st-flat';
+      const r=$(id).querySelector('rect');r.setAttribute('stroke','#40e0bd');r.setAttribute('stroke-width','2.5');
+      const x=+r.getAttribute('x')+180-64-8,y=+r.getAttribute('y')-10;$('here').setAttribute('transform',`translate(${x},${y})`);$('here').setAttribute('opacity',1);
+    }
+
+    fetch('signal.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(d=>{
+      sig=d;set('status',d.status||('LSEG close '+d.as_of));
+      if(d.close!=null)set('close',money(d.close));if(d.ma20!=null)set('ma20',money(d.ma20));if(d.ma50!=null)set('ma50',money(d.ma50));
+      if(d.trend)set('trend',d.trend==='up'?'↑ Up':'↓ Down');if(d.for)set('session',d.for);
+      const orders=Array.isArray(d.orders)?d.orders:[],b=d.book||{};
+      set('orders',JSON.stringify(orders,null,2));
+      set('summary',d.reason?`${d.reason} ${orders.length} order(s) for ${d.for}.`:`Orders for ${d.for}.`);
+      if(d.book){markState(b);if(!orders.length&&!b.shares&&!b.short_puts&&!b.short_calls){
+        set('example',JSON.stringify([{id:`nvda-csp-${d.for}`,for:d.for,order_type:'mkt',action:'SHT',qty:1,underlying:4815747,contract:'put',expiry:'5DTE+',strike:'otm:1',ref:'open'}],null,2));$('example-wrap').hidden=false}}
+      drawSignal();addEventListener('resize',drawSignal);
+    }).catch(e=>{set('status','Signal unavailable');set('summary','Could not load signal.json: '+e.message)});
+
+    /* ---------- backtest ---------- */
+    const btBox=$('bt-chart'),btTip=$('bt-tip'),yrBox=$('yr-chart'),yrTip=$('yr-tip');let bt=null,years=[];
+    function drawEquity(){
+      const s=bt.series,n=s.length,W=Math.max(300,btBox.clientWidth),H=Math.round(Math.min(330,Math.max(220,W*0.36))),m={l:46,r:W<560?10:96,t:10,b:30},pw=W-m.l-m.r,ph=H-m.t-m.b;
+      const lo=Math.min(...s.map(p=>Math.min(p.s,p.h)))*0.9,hi=Math.max(...s.map(p=>Math.max(p.s,p.h)))*1.1,ly=Math.log(lo),hy=Math.log(hi);
+      const t0=Date.parse(s[0].d),t1=Date.parse(s[n-1].d),Xd=d=>m.l+(Date.parse(d)-t0)/(t1-t0)*pw,X=i=>Xd(s[i].d),Y=v=>m.t+(hy-Math.log(v))/(hy-ly)*ph,g=[];
+      bt.trades.forEach(tr=>{const a=Xd(tr.entry),b=Xd(tr.exit||s[n-1].d);g.push(`<rect x="${a}" y="${m.t}" width="${Math.max(1,b-a)}" height="${ph}" fill="${BAND}"/>`)});
+      [0.5,1,2,5,10,20].filter(v=>v>=lo&&v<=hi).forEach(v=>g.push(`<line x1="${m.l}" x2="${m.l+pw}" y1="${Y(v)}" y2="${Y(v)}" stroke="${GRID}"/><text x="${m.l-8}" y="${Y(v)+4}" text-anchor="end">$${v}</text>`));
+      yearTicks(s[0].d,s[n-1].d,Xd,m.t+ph,H,g);
+      const path=k=>'M'+s.map((p,i)=>X(i).toFixed(1)+','+Y(p[k]).toFixed(1)).join('L'),L=s[n-1];let lab='';
+      if(W>=560){let a=Y(L.s),b=Y(L.h);if(Math.abs(a-b)<15){if(a<b)b=a+15;else a=b+15}lab=`<text x="${m.l+pw+8}" y="${a+4}" style="fill:var(--text)">Filter ${money(L.s)}</text><text x="${m.l+pw+8}" y="${b+4}" style="fill:var(--text)">Hold ${money(L.h)}</text>`}
+      btBox.querySelector('svg')?.remove();
+      btBox.insertAdjacentHTML('afterbegin',`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Growth of one dollar, log scale: filter ${money(L.s)}, hold ${money(L.h)}">${g.join('')}
+        <path d="${path('h')}" fill="none" stroke="${S2}" stroke-width="2" stroke-dasharray="6 4"/><path d="${path('s')}" fill="none" stroke="${S1}" stroke-width="2"/>${lab}
+        <text x="${m.l+6}" y="${m.t+14}">Growth of $1 · log scale · shaded = in market</text>
+        <line class="hv vx" y1="${m.t}" y2="${m.t+ph}" stroke="var(--muted)" opacity="0"/><circle class="hv d1" r="4" fill="${S1}" stroke="#101f2a" stroke-width="2" opacity="0"/><circle class="hv d2" r="4" fill="${S2}" stroke="#101f2a" stroke-width="2" opacity="0"/>
+        <rect class="hit" x="${m.l}" y="0" width="${pw}" height="${H}" fill="transparent"/></svg>`);
+      const svg=btBox.querySelector('svg');
+      crosshair(svg,W,m,pw,n,X,i=>{const p=s[i],x=X(i);svg.querySelectorAll('.hv').forEach(el=>el.setAttribute('opacity',1));const vx=svg.querySelector('.vx');vx.setAttribute('x1',x);vx.setAttribute('x2',x);
+        svg.querySelector('.d1').setAttribute('cx',x);svg.querySelector('.d1').setAttribute('cy',Y(p.s));svg.querySelector('.d2').setAttribute('cx',x);svg.querySelector('.d2').setAttribute('cy',Y(p.h));
+        btTip.innerHTML=`${p.d}<br><span style="color:${S1}">━</span> Filter <b>${money(p.s)}</b><br><span style="color:${S2}">┅</span> Hold <b>${money(p.h)}</b>`;return x},btTip);
+    }
+    function drawYears(){
+      const W=Math.max(300,yrBox.clientWidth),H=Math.round(Math.min(260,Math.max(200,W*0.26))),m={l:58,r:10,t:16,b:28},pw=W-m.l-m.r,ph=H-m.t-m.b;
+      const vals=years.flatMap(y=>[y.s,y.h]),lo=Math.min(0,...vals),hi=Math.max(0,...vals);
+      const step=(hi-lo)>2?1:0.5,top=Math.ceil(hi/step)*step,bot=Math.floor(lo/step)*step,Y=v=>m.t+(top-v)/(top-bot)*ph,g=[];
+      for(let v=bot;v<=top+1e-9;v+=step)g.push(`<line x1="${m.l}" x2="${m.l+pw}" y1="${Y(v)}" y2="${Y(v)}" stroke="${v===0?'#4d6b73':GRID}"/><text x="${m.l-8}" y="${Y(v)+4}" text-anchor="end">${v===0?'0%':pct(v,0)}</text>`);
+      const slot=pw/years.length,bw=Math.min(28,slot*0.3);
+      years.forEach((y,i)=>{const cx=m.l+slot*(i+.5);[[y.s,S1,-1],[y.h,S2,1]].forEach(([v,c,side])=>{const x=cx+side*(bw/2+1)-bw/2,y0=Y(Math.max(v,0)),hgt=Math.max(1,Math.abs(Y(v)-Y(0)));
+          g.push(`<rect x="${x}" y="${y0}" width="${bw}" height="${hgt}" rx="3" fill="${c}"/>`)});
+        g.push(`<text x="${cx}" y="${H-8}" text-anchor="middle">${y.y}${y.partial?'*':''}</text><rect class="yhit" data-i="${i}" x="${cx-slot/2}" y="0" width="${slot}" height="${H}" fill="transparent"/>`)});
+      yrBox.querySelector('svg')?.remove();
+      yrBox.insertAdjacentHTML('afterbegin',`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Return by year, filter vs hold">${g.join('')}</svg>`);
+      const svg=yrBox.querySelector('svg');
+      svg.querySelectorAll('.yhit').forEach(el=>{const show=()=>{const y=years[+el.dataset.i],r=svg.getBoundingClientRect(),x=(+el.getAttribute('x')+slot/2)*r.width/W;
+          yrTip.innerHTML=`${y.y}${y.partial?' (to '+bt.end+')':''}<br><span style="color:${S1}">■</span> Filter <b>${pct(y.s,0)}</b><br><span style="color:${S2}">■</span> Hold <b>${pct(y.h,0)}</b>`;yrTip.style.opacity=1;yrTip.style.left=Math.min(Math.max(0,x+10),r.width-yrTip.offsetWidth)+'px';yrTip.style.top='6px'};
+        el.addEventListener('pointermove',show);el.addEventListener('pointerdown',show);el.addEventListener('pointerleave',()=>yrTip.style.opacity=0)});
+    }
     fetch('backtest.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(d=>{
-      data=d;draw();addEventListener('resize',draw);
-      const a=d.strategy,b=d.buy_hold,rows=[['Total return',pct(a.total_return,0),pct(b.total_return,0)],['Annual return (CAGR)',pct(a.cagr),pct(b.cagr)],['Annual volatility',(a.vol*100).toFixed(1)+'%',(b.vol*100).toFixed(1)+'%'],['Sharpe (rf = 0)',a.sharpe.toFixed(2),b.sharpe.toFixed(2)],['Max drawdown',pct(a.max_drawdown),pct(b.max_drawdown)],['Days in market',(a.time_in_market*100).toFixed(0)+'%','100%'],['Round trips',a.round_trips,'—'],['Winning trades',(a.win_rate*100).toFixed(0)+'%','—']];
-      document.querySelector('#bt-table tbody').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+      bt=d;const by={};d.series.forEach(p=>{by[p.d.slice(0,4)]=p});let prev={s:1,h:1};
+      years=Object.keys(by).sort().map(y=>{const e=by[y],o={y,s:e.s/prev.s-1,h:e.h/prev.h-1,partial:y===d.end.slice(0,4)&&!d.end.endsWith('12-31')};prev=e;return o});
+      drawEquity();drawYears();addEventListener('resize',()=>{drawEquity();drawYears()});
+      const a=d.strategy,b=d.buy_hold;
+      $('bt-kpis').innerHTML=[['Total return',pct(a.total_return,0),pct(b.total_return,0)],['Annual return',pct(a.cagr),pct(b.cagr)],['Max drawdown',pct(a.max_drawdown,0),pct(b.max_drawdown,0)],['Sharpe',a.sharpe.toFixed(2),b.sharpe.toFixed(2)]]
+        .map(([k,x,y])=>`<div class="kpi"><div class="label">${k}</div><div class="vs"><span class="a" style="color:var(--text)">${x}</span><span class="b">hold ${y}</span></div></div>`).join('');
+      document.querySelector('#bt-table tbody').innerHTML=[['Total return',pct(a.total_return,0),pct(b.total_return,0)],['Annual return (CAGR)',pct(a.cagr),pct(b.cagr)],['Annual volatility',(a.vol*100).toFixed(1)+'%',(b.vol*100).toFixed(1)+'%'],['Sharpe (rf = 0)',a.sharpe.toFixed(2),b.sharpe.toFixed(2)],['Max drawdown',pct(a.max_drawdown),pct(b.max_drawdown)],['Days in market',(a.time_in_market*100).toFixed(0)+'%','100%'],['Round trips',a.round_trips,'—'],['Winning trades',(a.win_rate*100).toFixed(0)+'%','—']]
+        .map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
       document.querySelector('#bt-trades tbody').innerHTML=d.trades.map(t=>`<tr><td>${t.entry}</td><td>${money(t.entry_px)}</td><td>${t.exit||'open'}</td><td>${money(t.exit_px)}</td><td>${pct(t.return)}</td></tr>`).join('');
-      document.getElementById('bt-span').textContent=`${d.start} to ${d.end}. Source: ${d.source}. Costs: ${d.costs}.`;
-    }).catch(e=>{box.textContent='Could not load backtest.json: '+e.message});
+      set('bt-span',`${d.start} to ${d.end} · ${d.source} · costs: ${d.costs}. 2021 starts mid-January; * partial year.`);
+    }).catch(e=>{btBox.textContent='Could not load backtest.json: '+e.message});
   })();
   </script>
 </body>

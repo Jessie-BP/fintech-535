@@ -23,6 +23,8 @@ RIC = "NVDA.O"
 MULTIPLIER = 100
 EXPIRY = "5DTE+"   # listed expiry nearest 5 calendar days out, at least 5 days left
 STRIKE = "otm:1"   # one listed strike out of the money from ATM at the open
+HISTORY_DAYS = 420  # calendar days pulled; enough for ~250 sessions with a 50-day mean
+CHART_SESSIONS = 250
 
 
 def credential(name: str) -> str:
@@ -54,7 +56,7 @@ def fetch_closes() -> list[tuple[date, float]]:
             universe=RIC,
             fields=["TRDPRC_1"],
             interval="daily",
-            start=(today - timedelta(days=150)).isoformat(),
+            start=(today - timedelta(days=HISTORY_DAYS)).isoformat(),
             end=(today + timedelta(days=1)).isoformat(),
         )
     finally:
@@ -223,7 +225,13 @@ def plan(closes: list[tuple[date, float]], book: object, now: datetime) -> tuple
         raise ValueError("Need at least 50 distinct, valid daily closes")
     if clean[-1][0] != last:
         raise ValueError(f"Latest LSEG price is stale: {clean[-1][0]}, expected {last}")
-    ma20, ma50, bullish = signal_from_closes([price for _, price in clean])
+    prices = [price for _, price in clean]
+    ma20, ma50, bullish = signal_from_closes(prices)
+    history = []
+    for i in range(max(49, len(clean) - CHART_SESSIONS), len(clean)):
+        m20, m50, _ = signal_from_closes(prices[: i + 1])
+        history.append({"d": clean[i][0].isoformat(), "c": round(prices[i], 2),
+                        "m20": round(m20, 2), "m50": round(m50, 2)})
     session = next_session(now)
     state = book_state(book)
     orders, reason = wheel_orders(state, bullish, clean[-1][1], session)
@@ -238,6 +246,7 @@ def plan(closes: list[tuple[date, float]], book: object, now: datetime) -> tuple
         "book": state,
         "reason": reason,
         "orders": orders,
+        "history": history,
     }
     return orders, signal
 
