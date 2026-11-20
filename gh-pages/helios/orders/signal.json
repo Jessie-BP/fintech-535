@@ -1,10 +1,10 @@
 {
   "strategy": "NVDA 20/50-day moving average",
-  "as_of": "2026-11-18",
-  "for": "2026-11-19",
-  "close": 150.96,
-  "ma20": 189.04,
-  "ma50": 210.3032,
+  "as_of": "2026-11-19",
+  "for": "2026-11-20",
+  "close": 145.98,
+  "ma20": 185.7285,
+  "ma50": 208.8556,
   "target_shares": 0,
   "held_shares": 0,
   "orders": []
