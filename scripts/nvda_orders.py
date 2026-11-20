@@ -100,6 +100,16 @@ def share_count(book: object) -> int:
     return total
 
 
+def signal_from_closes(prices: list[float]) -> tuple[float, float, int]:
+    """The whole trading rule. Shared by the nightly order run and the backtest.
+
+    Long TARGET_SHARES when the 20-day mean close is above the 50-day mean, else flat.
+    """
+    ma20 = sum(prices[-20:]) / 20
+    ma50 = sum(prices[-50:]) / 50
+    return ma20, ma50, TARGET_SHARES if ma20 > ma50 else 0
+
+
 def nasdaq_schedule(now: datetime):
     import pandas_market_calendars as mcal
 
@@ -144,9 +154,7 @@ def plan(closes: list[tuple[date, float]], held: int, now: datetime) -> tuple[li
         raise ValueError("Need at least 50 distinct, valid daily closes")
     if clean[-1][0] != last:
         raise ValueError(f"Latest LSEG price is stale: {clean[-1][0]}, expected {last}")
-    ma20 = sum(price for _, price in clean[-20:]) / 20
-    ma50 = sum(price for _, price in clean[-50:]) / 50
-    target = TARGET_SHARES if ma20 > ma50 else 0
+    ma20, ma50, target = signal_from_closes([price for _, price in clean])
     session = next_session(now)
     delta = target - held
     orders = []

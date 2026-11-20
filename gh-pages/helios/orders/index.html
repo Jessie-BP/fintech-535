@@ -12,6 +12,11 @@
     .hero{padding:58px 0 34px}.eyebrow{color:var(--mint);font-size:12px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}h1{font-size:clamp(38px,6vw,68px);line-height:1.05;letter-spacing:-.055em;margin:12px 0 20px}h2{font-size:23px;margin:0 0 12px}h3{font-size:17px;margin:0 0 8px}
     .lead{max-width:720px;font-size:19px;color:#c7d8d5}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card,.section{background:var(--panel);border:1px solid var(--line);border-radius:13px}.card{padding:18px}.label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}.value{font-size:28px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}.section{padding:26px;margin-top:18px}.section p{color:#c7d8d5;margin:8px 0 14px}.pill{display:inline-block;color:var(--mint);border:1px solid var(--mint);border-radius:99px;padding:3px 11px;font-size:12px;font-weight:700;letter-spacing:.08em}
     .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.step{border-top:2px solid var(--mint);padding-top:12px}.num{color:var(--amber);font-size:12px;font-weight:700;letter-spacing:.12em}pre{background:#07141b;border:1px solid var(--line);border-radius:9px;padding:18px;overflow:auto;color:#d9f1e9;font-size:13px;line-height:1.5}code{font-family:ui-monospace,SFMono-Regular,monospace}ul{padding-left:20px;color:#c7d8d5}li{margin:6px 0}.links{display:flex;flex-wrap:wrap;gap:16px;margin-top:18px;font-size:14px}.note{font-size:13px;color:var(--muted)}
+    .bt-legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:4px 0 8px}.bt-legend span{display:inline-flex;align-items:center;gap:7px}.bt-legend i{display:inline-block;width:22px;height:0;border-top:2px solid}
+    .chart{position:relative}.chart svg{display:block;width:100%;height:auto;touch-action:pan-y}.chart text{font:12px system-ui,-apple-system,sans-serif;fill:var(--muted)}
+    .tip{position:absolute;pointer-events:none;background:#07141b;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.5;white-space:nowrap;opacity:0;transition:opacity .1s}.tip b{color:var(--text);font-weight:600}
+    table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}th,td{text-align:right;padding:8px 10px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+    .tablewrap{overflow-x:auto;margin:14px 0}details summary{cursor:pointer;color:var(--mint);font-size:14px;margin-top:8px}
     @media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:1fr}.wrap{padding:16px}.hero{padding-top:36px}}
   </style>
 </head>
@@ -27,6 +32,18 @@
     </div>
     <section class="section"><h2>Latest open orders</h2><p id="summary">Reading the published signal…</p><pre id="orders">[]</pre><p id="example-intro" class="note" hidden>No order tonight: the position already matches the target. If the 20-day mean crosses above the 50-day mean while the book holds no NVDA, the script writes this order instead (the same shape the unit tests check):</p><pre id="example" hidden></pre><p class="note">This page displays the generated order file. It does not place trades. Sanji's order resolver is described in the course specification and is not active yet.</p></section>
     <section class="section"><h2>How the algorithm works</h2><div class="steps"><div class="step"><div class="num">01 / INPUT</div><h3>Use only known closes</h3><p>Pull roughly 150 calendar days of NVDA daily <code>TRDPRC_1</code> from LSEG. Require 50 valid closes and require the newest close to match the last completed NASDAQ session.</p></div><div class="step"><div class="num">02 / SIGNAL</div><h3>Compare moving averages</h3><p>If the mean of the last 20 closes exceeds the mean of the last 50 closes, target 1 share. Otherwise, target 0. The strict comparison puts ties in cash.</p></div><div class="step"><div class="num">03 / ORDERS</div><h3>Trade the difference</h3><p>Read <code>mkt/positions.json</code> when present. Buy the shares needed to reach 1 or sell shares needed to reach 0. If already at target, write <code>[]</code>.</p></div></div></section>
+    <section class="section" id="backtest"><h2>Backtest</h2><p>The same rule, run over LSEG daily bars since late 2020. The backtest calls the exact function the nightly job uses (<code>signal_from_closes</code>), decides at each close, and fills at the next day's open, the way a Sanji market order would. Returns are split at the open, so the overnight gap belongs to the old position and the day's move to the new one. No commissions or slippage. Prices are split-adjusted. Growth of $1, log scale:</p>
+      <div class="bt-legend" aria-hidden="true"><span><i style="border-color:#1f9e80"></i>MA 20/50 rule</span><span><i style="border-color:#c08030;border-top-style:dashed"></i>Buy and hold NVDA</span></div>
+      <div class="chart" id="bt-chart"><div class="tip" id="bt-tip"></div></div>
+      <div class="tablewrap"><table id="bt-table" aria-label="Backtest statistics"><thead><tr><th>Metric</th><th>MA 20/50 rule</th><th>Buy and hold</th></tr></thead><tbody></tbody></table></div>
+      <p class="note" id="bt-span"></p>
+      <h3>What it shows</h3>
+      <p>As of the 2026-11-19 run, the rule turned $1 into about $3.89; holding NVDA turned it into about $10.75. The rule was in the market 64% of days and ran at lower volatility (38% vs 51%), but its Sharpe ratio was lower (0.80 vs 1.06). On a stock that rose tenfold, being out a third of the time is expensive: in 2023 the rule made +150% while holding made +246%.</p>
+      <p>It also did not deliver the protection a trend filter promises. It exited in January 2022, about 17% below the November 2021 peak, but then bought two bear-market rallies, in March and August 2022, and sold each about 30% lower. It lost 59% in 2022 against 51% for holding, and its worst drawdown (−65%) was almost the same as holding's (−66%). Where it helped is the recent decline: down 8% in 2026 against 23% for holding, and flat since the exit on 2026-11-02, which is why tonight's order file is empty.</p>
+      <p>Limits: one stock, one path, and NVDA was picked after it had already risen, which flatters any long rule. Seventeen round trips over six years make costs negligible, so they are left out. The live strategy trades one share, so the dollar results are small; the percentages are what matter.</p>
+      <details><summary>All trades</summary><div class="tablewrap"><table id="bt-trades"><thead><tr><th>Entry (open)</th><th>Price</th><th>Exit (open)</th><th>Price</th><th>Return</th></tr></thead><tbody></tbody></table></div></details>
+      <div class="links"><a href="https://github.com/Jessie-BP/fintech-535/blob/main/scripts/nvda_ma_backtest.py">Backtest script ↗</a><a href="backtest.json">backtest.json ↗</a></div>
+    </section>
     <section class="section"><h2>When it runs</h2><p>The workflow is scheduled for <code>03:00 UTC</code>, which is 10 p.m. New York in winter and 11 p.m. in summer, following the course's nightly refresh. GitHub starts scheduled jobs late when its runners are busy. On this repo the scheduled run has actually started around <code>11:00 UTC</code>, about 6 a.m. New York, which is still before the 9:30 open.</p><p>The script therefore does not trust the calendar date. It asks the NASDAQ calendar for two sessions measured against the current time: the last session that has already <em>closed</em>, whose close must be the newest LSEG bar, and the first session that has not yet <em>opened</em>, which becomes the order's <code>for</code> date. An on-time run at 10 p.m. Monday and a late run at 6 a.m. Tuesday both plan Tuesday from Monday's close. A manual run during market hours ignores the partial bar and plans the following session. If the newest close is missing, the job fails instead of writing orders from stale data.</p><p>After the script writes the files, the workflow commits them and starts the Pages deployment, so this page shows the same orders as the repo.</p></section>
     <section class="section"><h2>Why this design</h2><p>A moving average rule is transparent and needs only daily stock prices. Holding at most one share keeps the assignment's order mechanics visible without options chain assumptions. The strategy reacts slowly to trend changes, may whipsaw in sideways markets, and uses the next session's market open, which can differ materially from the prior close.</p><p>The order <code>id</code> contains the session date and side, so a repeated nightly run for the same session produces the same identifier. Orders use NVDA's IB conid <code>4815747</code>, the <code>underlying</code> contract, and only fields from the <a href="https://jakevestal.github.io/server-logic-533/order.html">Sanji specification</a>. A data fetch or calendar validation failure stops the job before either order file is overwritten.</p><p>The root <code>open_orders.json</code> satisfies the assignment's requested location. An identical <code>mkt/open_orders.json</code> supports the path in Sanji's published schema. The workflow commits both files and this page's signal data, then triggers Pages deployment.</p><p>Sanji fills orders from the prices the course machine stores, and it stores only the stocks listed in the repo's <code>price_history.json</code>. NVDA (conid <code>4815747</code>) is listed there with <code>"tracked": true</code>, so the nightly price job collects its bars alongside the strategy's own LSEG pull.</p><div class="links"><a href="https://github.com/Jessie-BP/fintech-535/blob/main/.github/workflows/nvda-orders.yml">Nightly Action ↗</a><a href="https://github.com/Jessie-BP/fintech-535/blob/main/scripts/nvda_orders.py">Python strategy ↗</a><a href="https://github.com/Jessie-BP/fintech-535/blob/main/open_orders.json">Root orders ↗</a><a href="https://github.com/Jessie-BP/fintech-535/actions/workflows/nvda-orders.yml">Run history ↗</a><a href="https://github.com/Jessie-BP/fintech-535/blob/main/price_history.json">price_history.json ↗</a><a href="https://www.interactivebrokers.com/campus/ibkr-api-page/contracts/">IBKR contract IDs ↗</a></div></section>
   </div>
@@ -48,6 +65,61 @@
       }
       set('summary',d.status || (orders.length ? `${orders.length} order for ${d.for}; held ${d.held_shares}, target ${d.target_shares} NVDA share(s).` : `No trade for ${d.for}; held ${d.held_shares}, target ${d.target_shares} NVDA share(s).`));
     }).catch(e=>{set('status','Signal unavailable');set('summary','Could not load signal.json: '+e.message)});
+  </script>
+  <script>
+  (function(){
+    const S='#1f9e80',H='#c08030',GRID='#25404a';
+    const pct=(x,d=1)=>(x>=0?'+':'')+(x*100).toFixed(d)+'%';
+    const money=x=>'$'+x.toFixed(2);
+    const box=document.getElementById('bt-chart'),tip=document.getElementById('bt-tip');
+    let data=null;
+    function draw(){
+      if(!data)return;
+      const W=Math.max(300,box.clientWidth),Hh=Math.round(Math.min(360,Math.max(240,W*0.42)));
+      const m={l:46,r:W<520?12:96,t:10,b:40},band=8;
+      const pw=W-m.l-m.r,ph=Hh-m.t-m.b-band-10;
+      const s=data.series,n=s.length;
+      const lo=Math.min(...s.map(p=>Math.min(p.s,p.h))),hi=Math.max(...s.map(p=>Math.max(p.s,p.h)));
+      const ly=Math.log(lo*0.9),hy=Math.log(hi*1.1);
+      const t0=Date.parse(s[0].d),t1=Date.parse(s[n-1].d);
+      const X=d=>m.l+(Date.parse(d)-t0)/(t1-t0)*pw, Y=v=>m.t+(hy-Math.log(v))/(hy-ly)*ph;
+      let g='';
+      [0.5,1,2,5,10,20].filter(v=>v>=lo*0.9&&v<=hi*1.1).forEach(v=>{g+=`<line x1="${m.l}" x2="${m.l+pw}" y1="${Y(v)}" y2="${Y(v)}" stroke="${GRID}" stroke-width="1"/><text x="${m.l-8}" y="${Y(v)+4}" text-anchor="end">$${v}</text>`});
+      for(let y=new Date(s[0].d).getUTCFullYear()+1;y<=new Date(s[n-1].d).getUTCFullYear();y++){const x=X(y+'-01-01');g+=`<line x1="${x}" x2="${x}" y1="${m.t+ph}" y2="${m.t+ph+4}" stroke="${GRID}"/><text x="${x}" y="${Hh-8}" text-anchor="middle">${y}</text>`}
+      const path=k=>'M'+s.map(p=>X(p.d).toFixed(1)+','+Y(p[k]).toFixed(1)).join('L');
+      // in-market strip: strategy curve moves only while holding
+      const by=m.t+ph+10;let strip='';
+      data.trades.forEach(tr=>{const a=X(tr.entry),b=X(tr.exit||s[n-1].d);strip+=`<rect x="${a}" y="${by}" width="${Math.max(2,b-a)}" height="${band}" rx="2" fill="${S}"/>`});
+      const last=s[n-1];
+      let labels='';
+      if(W>=520){const ys=Y(last.s),yh=Y(last.h),gap=Math.abs(ys-yh)<16?(ys<yh?-8:8):0;
+        labels=`<text x="${m.l+pw+8}" y="${ys+4-gap}" style="fill:var(--text)">MA rule ${money(last.s)}</text><text x="${m.l+pw+8}" y="${yh+4+gap}" style="fill:var(--text)">Hold ${money(last.h)}</text>`}
+      box.querySelector('svg')?.remove();
+      box.insertAdjacentHTML('afterbegin',`<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Growth of one dollar: MA rule ${money(last.s)}, buy and hold ${money(last.h)}">${g}
+        <path d="${path('h')}" fill="none" stroke="${H}" stroke-width="2" stroke-dasharray="6 4" stroke-linejoin="round"/>
+        <path d="${path('s')}" fill="none" stroke="${S}" stroke-width="2" stroke-linejoin="round"/>
+        ${strip}<text x="${m.l}" y="${by-3}" font-size="11">In market</text>${labels}
+        <line id="bt-x" y1="${m.t}" y2="${m.t+ph}" stroke="var(--muted)" stroke-width="1" opacity="0"/>
+        <circle id="bt-ds" r="4" fill="${S}" stroke="#101f2a" stroke-width="2" opacity="0"/><circle id="bt-dh" r="4" fill="${H}" stroke="#101f2a" stroke-width="2" opacity="0"/>
+        <rect x="${m.l}" y="0" width="${pw}" height="${Hh}" fill="transparent" id="bt-hit"/></svg>`);
+      const svg=box.querySelector('svg'),hit=svg.querySelector('#bt-hit'),xl=svg.querySelector('#bt-x'),ds=svg.querySelector('#bt-ds'),dh=svg.querySelector('#bt-dh');
+      const show=e=>{const r=svg.getBoundingClientRect(),px=(e.clientX-r.left)*W/r.width;
+        const tt=t0+(px-m.l)/pw*(t1-t0);let i=0,best=1e18;for(let k=0;k<n;k++){const dd=Math.abs(Date.parse(s[k].d)-tt);if(dd<best){best=dd;i=k}}
+        const p=s[i],x=X(p.d);[xl,ds,dh].forEach(el=>el.setAttribute('opacity',1));xl.setAttribute('x1',x);xl.setAttribute('x2',x);
+        ds.setAttribute('cx',x);ds.setAttribute('cy',Y(p.s));dh.setAttribute('cx',x);dh.setAttribute('cy',Y(p.h));
+        tip.innerHTML=`${p.d}<br><span style="color:${S}">━</span> MA rule <b>${money(p.s)}</b><br><span style="color:${H}">┅</span> Hold <b>${money(p.h)}</b>`;
+        tip.style.opacity=1;const sx=x*r.width/W;tip.style.left=Math.min(Math.max(0,sx+12),r.width-tip.offsetWidth)+'px';tip.style.top='8px'};
+      const hide=()=>{[xl,ds,dh].forEach(el=>el.setAttribute('opacity',0));tip.style.opacity=0};
+      hit.addEventListener('pointermove',show);hit.addEventListener('pointerdown',show);hit.addEventListener('pointerleave',hide);
+    }
+    fetch('backtest.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(d=>{
+      data=d;draw();addEventListener('resize',draw);
+      const a=d.strategy,b=d.buy_hold,rows=[['Total return',pct(a.total_return,0),pct(b.total_return,0)],['Annual return (CAGR)',pct(a.cagr),pct(b.cagr)],['Annual volatility',(a.vol*100).toFixed(1)+'%',(b.vol*100).toFixed(1)+'%'],['Sharpe (rf = 0)',a.sharpe.toFixed(2),b.sharpe.toFixed(2)],['Max drawdown',pct(a.max_drawdown),pct(b.max_drawdown)],['Days in market',(a.time_in_market*100).toFixed(0)+'%','100%'],['Round trips',a.round_trips,'—'],['Winning trades',(a.win_rate*100).toFixed(0)+'%','—']];
+      document.querySelector('#bt-table tbody').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+      document.querySelector('#bt-trades tbody').innerHTML=d.trades.map(t=>`<tr><td>${t.entry}</td><td>${money(t.entry_px)}</td><td>${t.exit||'open'}</td><td>${money(t.exit_px)}</td><td>${pct(t.return)}</td></tr>`).join('');
+      document.getElementById('bt-span').textContent=`${d.start} to ${d.end}. Source: ${d.source}. Costs: ${d.costs}.`;
+    }).catch(e=>{box.textContent='Could not load backtest.json: '+e.message});
+  })();
   </script>
 </body>
 </html>
