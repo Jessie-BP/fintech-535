@@ -1,5 +1,5 @@
 {
- "rule": "Long 1 NVDA share when the 20-day mean close is above the 50-day mean; otherwise flat. Signal at the close, market order at the next open.",
+ "rule": "The strategy's trend filter applied to the stock: long NVDA when the 20-day mean close is above the 50-day mean, otherwise flat. Signal at the close, fill at the next open. Tests the filter only, not the option premiums.",
  "source": "LSEG NVDA.O daily OPEN_PRC and TRDPRC_1, split-adjusted",
  "start": "2021-01-14",
  "end": "2026-11-19",

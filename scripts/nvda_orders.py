@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Turn LSEG NVDA closes and Sanji's position book into next-session orders."""
+"""Trend-filtered NVDA wheel: LSEG closes + Sanji's book -> next-session Sanji orders.
+
+The 20/50-day moving average decides direction. The book decides the wheel step:
+  flat, trend up        -> sell 1 cash-secured put   (SHT put 5DTE+ otm:1)
+  long 100s, trend up   -> sell covered calls        (SHT call 5DTE+ otm:1)
+  long shares, trend down -> sell the shares         (SEL underlying)
+  any short option open -> wait for expiry or assignment (Sanji applies both)
+"""
 
 from __future__ import annotations
 
@@ -13,7 +20,9 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parent.parent
 CONID = 4815747  # NVDA common stock, NASDAQ, USD
 RIC = "NVDA.O"
-TARGET_SHARES = 1
+MULTIPLIER = 100
+EXPIRY = "5DTE+"   # listed expiry nearest 5 calendar days out, at least 5 days left
+STRIKE = "otm:1"   # one listed strike out of the money from ATM at the open
 
 
 def credential(name: str) -> str:
@@ -58,56 +67,78 @@ def fetch_closes() -> list[tuple[date, float]]:
     return sorted(set(closes))
 
 
-def share_count(book: object) -> int:
-    """Accept a flat initial book or common keyed/list position shapes; reject ambiguity."""
+def _qty(item: dict) -> int:
+    qty = item.get("qty", item.get("quantity", item.get("position", item.get("shares"))))
+    if isinstance(qty, bool) or not isinstance(qty, (int, float)) or not float(qty).is_integer():
+        raise ValueError(f"Position entry has no integral quantity: {item}")
+    side = str(item.get("side", item.get("action", ""))).lower()
+    if side in ("short", "sht", "sell_to_open") and qty > 0:
+        qty = -qty
+    return int(qty)
+
+
+def _entries(book: object) -> list[dict]:
     if book in ({}, [], None):
-        return 0
-    if isinstance(book, dict):
-        items = book.get("positions", book.get("holdings", book))
-        if items in ({}, [], None):
-            return 0
-        if isinstance(items, dict):
-            if str(CONID) in items:
-                item = items[str(CONID)]
-                if isinstance(item, (int, float)) and not isinstance(item, bool):
-                    return int(item)
-                if isinstance(item, dict) and "conid" not in item and "underlying" not in item:
-                    item = {**item, "conid": CONID}
-                items = [item]
-            elif "conid" in items or "underlying" in items:
-                items = [items]
-            else:
-                items = list(items.values())
-    else:
-        items = book
-    if not isinstance(items, list):
+        return []
+    items = book.get("positions", book.get("holdings", book)) if isinstance(book, dict) else book
+    if isinstance(items, dict):
+        if "conid" in items or "underlying" in items:
+            items = [items]
+        else:  # keyed by conid or by an id; skip scalar fields such as cash
+            rows = []
+            for key, value in items.items():
+                if isinstance(value, dict):
+                    rows.append(value if ("conid" in value or "underlying" in value) else {**value, "conid": key})
+                elif isinstance(value, (int, float)) and not isinstance(value, bool) and str(key).isdigit():
+                    rows.append({"conid": key, "qty": value})
+            items = rows
+    if not isinstance(items, list) or not all(isinstance(i, dict) for i in items):
         raise ValueError("Unrecognized positions.json structure")
-    total = 0
-    for item in items:
-        if not isinstance(item, dict):
-            raise ValueError("Unrecognized position entry")
-        asset = item.get("conid", item.get("underlying"))
+    return items
+
+
+def book_state(book: object) -> dict:
+    """NVDA shares and option positions from Sanji's book.
+
+    Sanji has not published the positions.json shape yet, so this accepts the
+    common ones and fails loudly on anything it cannot read. Short positions may
+    be negative quantities or carry side/action "short"/"SHT".
+    """
+    state = {"shares": 0, "short_puts": 0, "short_calls": 0, "long_options": 0, "cash": None}
+    if isinstance(book, dict):
+        cash = book.get("cash")
+        if isinstance(cash, (int, float)) and not isinstance(cash, bool):
+            state["cash"] = float(cash)
+    for item in _entries(book):
+        asset = item.get("underlying", item.get("conid"))
         if asset is None:
-            raise ValueError("Position entry has no conid")
-        if str(asset) != str(CONID) or item.get("contract", "underlying") != "underlying":
+            raise ValueError(f"Position entry has no conid: {item}")
+        if str(asset) != str(CONID):
             continue
-        qty = item.get("qty", item.get("quantity", item.get("shares")))
-        if isinstance(qty, bool) or not isinstance(qty, (int, float)) or not float(qty).is_integer():
-            raise ValueError("NVDA position has no integral share quantity")
-        total += int(qty)
-    if total < 0:
-        raise ValueError("This long-only strategy cannot manage short NVDA shares")
-    return total
+        contract = str(item.get("contract", "underlying")).lower()
+        qty = _qty(item)
+        if contract == "underlying":
+            state["shares"] += qty
+        elif contract in ("put", "call"):
+            if qty < 0:
+                state[f"short_{contract}s"] += -qty
+            else:
+                state["long_options"] += qty
+        else:
+            raise ValueError(f"Unknown contract type: {contract}")
+    if state["shares"] < 0:
+        raise ValueError("This strategy never shorts NVDA shares")
+    return state
 
 
-def signal_from_closes(prices: list[float]) -> tuple[float, float, int]:
-    """The whole trading rule. Shared by the nightly order run and the backtest.
+def signal_from_closes(prices: list[float]) -> tuple[float, float, bool]:
+    """The trend filter. Shared by the nightly order run and the backtest.
 
-    Long TARGET_SHARES when the 20-day mean close is above the 50-day mean, else flat.
+    Bullish when the 20-day mean close is above the 50-day mean. Ties are not bullish.
     """
     ma20 = sum(prices[-20:]) / 20
     ma50 = sum(prices[-50:]) / 50
-    return ma20, ma50, TARGET_SHARES if ma20 > ma50 else 0
+    return ma20, ma50, ma20 > ma50
 
 
 def nasdaq_schedule(now: datetime):
@@ -146,7 +177,45 @@ def latest_session(now: datetime) -> date:
     return done.index[-1].date()
 
 
-def plan(closes: list[tuple[date, float]], held: int, now: datetime) -> tuple[list[dict], dict]:
+def wheel_orders(state: dict, bullish: bool, close: float, session: date) -> tuple[list[dict], str]:
+    """Pick the wheel step for tomorrow. Returns (orders, reason)."""
+    day = session.isoformat()
+
+    def order(kind: str, action: str, qty: int, contract: str) -> dict:
+        o = {"id": f"nvda-{kind}-{day}", "for": day, "order_type": "mkt", "action": action,
+             "qty": qty, "underlying": CONID, "contract": contract}
+        if contract != "underlying":
+            o.update(expiry=EXPIRY, strike=STRIKE)
+        o["ref"] = "open"
+        return o
+
+    shares = state["shares"]
+    if state["short_puts"] or state["short_calls"]:
+        return [], "A short option is open. Wait for it to expire or be assigned."
+    if state["long_options"]:
+        return [], "The book holds long NVDA options this strategy did not open. No new orders."
+    if not bullish:
+        if shares:
+            return [order("exit", "SEL", shares, "underlying")], "Trend is down. Sell the shares."
+        return [], "Trend is down and the book is flat. Stay out."
+    orders, reasons = [], []
+    if shares % MULTIPLIER:
+        orders.append(order("odd-lot", "SEL", shares % MULTIPLIER, "underlying"))
+        reasons.append(f"Sell {shares % MULTIPLIER} odd-lot share(s); calls cover 100 at a time.")
+    if shares >= MULTIPLIER:
+        orders.append(order("cc", "SHT", shares // MULTIPLIER, "call"))
+        reasons.append("Trend is up and the book is long shares. Write covered calls.")
+        return orders, " ".join(reasons)
+    need = close * MULTIPLIER
+    if state["cash"] is not None and state["cash"] < need:
+        reasons.append(f"Trend is up, but cash ${state['cash']:,.0f} does not secure a put (about ${need:,.0f}).")
+        return orders, " ".join(reasons)
+    orders.append(order("csp", "SHT", 1, "put"))
+    reasons.append("Trend is up and the book is flat. Write a cash-secured put.")
+    return orders, " ".join(reasons)
+
+
+def plan(closes: list[tuple[date, float]], book: object, now: datetime) -> tuple[list[dict], dict]:
     last = latest_session(now)
     # Drop any partial bar for a session still trading (manual run during market hours).
     clean = sorted((day, price) for day, price in closes if day <= last and math.isfinite(price) and price > 0)
@@ -154,31 +223,20 @@ def plan(closes: list[tuple[date, float]], held: int, now: datetime) -> tuple[li
         raise ValueError("Need at least 50 distinct, valid daily closes")
     if clean[-1][0] != last:
         raise ValueError(f"Latest LSEG price is stale: {clean[-1][0]}, expected {last}")
-    ma20, ma50, target = signal_from_closes([price for _, price in clean])
+    ma20, ma50, bullish = signal_from_closes([price for _, price in clean])
     session = next_session(now)
-    delta = target - held
-    orders = []
-    if delta:
-        action = "BUY" if delta > 0 else "SEL"
-        orders.append({
-            "id": f"nvda-ma20-50-{action.lower()}-{session.isoformat()}",
-            "for": session.isoformat(),
-            "order_type": "mkt",
-            "action": action,
-            "qty": abs(delta),
-            "underlying": CONID,
-            "contract": "underlying",
-            "ref": "open",
-        })
+    state = book_state(book)
+    orders, reason = wheel_orders(state, bullish, clean[-1][1], session)
     signal = {
-        "strategy": "NVDA 20/50-day moving average",
+        "strategy": "NVDA wheel with a 20/50-day trend filter",
         "as_of": clean[-1][0].isoformat(),
         "for": session.isoformat(),
         "close": round(clean[-1][1], 2),
         "ma20": round(ma20, 4),
         "ma50": round(ma50, 4),
-        "target_shares": target,
-        "held_shares": held,
+        "trend": "up" if bullish else "down",
+        "book": state,
+        "reason": reason,
         "orders": orders,
     }
     return orders, signal
@@ -193,12 +251,13 @@ def main() -> None:
     now = datetime.now(ZoneInfo("UTC"))
     book_path = ROOT / "mkt" / "positions.json"
     book = json.loads(book_path.read_text()) if book_path.exists() else {}
-    orders, signal = plan(fetch_closes(), share_count(book), now)
+    orders, signal = plan(fetch_closes(), book, now)
     # The assignment requests a root file; Sanji's published schema reads mkt/.
     write_json(ROOT / "open_orders.json", orders)
     write_json(ROOT / "mkt" / "open_orders.json", orders)
     write_json(ROOT / "gh-pages" / "helios" / "orders" / "signal.json", signal)
-    print(f"NVDA {signal['as_of']} close={signal['close']} MA20={signal['ma20']} MA50={signal['ma50']}; {len(orders)} order(s) for {signal['for']}")
+    print(f"NVDA {signal['as_of']} close={signal['close']} MA20={signal['ma20']} MA50={signal['ma50']} "
+          f"trend={signal['trend']}; {len(orders)} order(s) for {signal['for']}: {signal['reason']}")
 
 
 if __name__ == "__main__":

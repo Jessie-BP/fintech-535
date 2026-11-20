@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Backtest the nightly NVDA 20/50-day moving-average rule on LSEG daily bars.
+"""Backtest the strategy's 20/50-day trend filter on NVDA stock, using LSEG daily bars.
 
 The simulation mirrors what the live system does each night:
   * after the close of day t, run signal_from_closes() on closes up to t;
@@ -137,8 +137,9 @@ def backtest(bars: list[tuple[date, float, float]]) -> dict:
     closed = [tr for tr in trades if tr["exit"]]
     in_market = sum(1 for t in range(first, len(bars)) if target[t - 1]) / len(days)
     return {
-        "rule": "Long 1 NVDA share when the 20-day mean close is above the 50-day mean; "
-                "otherwise flat. Signal at the close, market order at the next open.",
+        "rule": "The strategy's trend filter applied to the stock: long NVDA when the 20-day mean "
+                "close is above the 50-day mean, otherwise flat. Signal at the close, fill at the next open. "
+                "Tests the filter only, not the option premiums.",
         "source": "LSEG NVDA.O daily OPEN_PRC and TRDPRC_1, split-adjusted",
         "start": days[0].isoformat(),
         "end": days[-1].isoformat(),

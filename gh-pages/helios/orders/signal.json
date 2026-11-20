@@ -1,11 +1,18 @@
 {
-  "strategy": "NVDA 20/50-day moving average",
+  "strategy": "NVDA wheel with a 20/50-day trend filter",
   "as_of": "2026-11-19",
-  "for": "2026-11-20",
+  "for": "2026-11-23",
   "close": 145.98,
   "ma20": 185.7285,
   "ma50": 208.8556,
-  "target_shares": 0,
-  "held_shares": 0,
+  "trend": "down",
+  "book": {
+    "shares": 0,
+    "short_puts": 0,
+    "short_calls": 0,
+    "long_options": 0,
+    "cash": null
+  },
+  "reason": "Trend is down and the book is flat. Stay out.",
   "orders": []
 }
